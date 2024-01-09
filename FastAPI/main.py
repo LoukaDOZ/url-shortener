@@ -7,10 +7,15 @@ import postgres as db
 import re
 import random
 
-URL_MAX_LEN = 256
+JINJA_TEMPLATES_FOLDER = "templates"
+DB_HOST = "localhost"
+DB_PORT = 5431
+DB_USER = "postgres"
+DB_PASSWORD = "postgres"
+DB_DEFAULT_DB_NAME = "url_shortener"
 URL_ID_LEN = 16
-HOST = "localhost"
-PORT = 8000
+URL_REGEX = re.compile("^https?:\/\/(www\.)?[-a-zA-Z0-9@:%_\+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?$")
+URL_ID_CHARS = "ABCDEFGHIJKLMOPQRSTUVWXYZabcdefghijklmopqrstuvwxyz0123456789"
 
 # App init
 app = FastAPI(
@@ -19,13 +24,10 @@ app = FastAPI(
     summary = "Shorten an URL"
 )
 #app.mount("/static", StaticFiles(directory="templates"))
-templates = Jinja2Templates(directory="templates")
-#"^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$"
-url_regex = re.compile("^https?:\/\/(www\.)?[-a-zA-Z0-9@:%_\+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?$")
-url_id_chars = "ABCDEFGHIJKLMOPQRSTUVWXYZabcdefghijklmopqrstuvwxyz0123456789"
+templates = Jinja2Templates(directory=JINJA_TEMPLATES_FOLDER)
 
 # DB connection init
-query = db.connect("postgres", "postgres", "url_shortener", "localhost", 5431)
+query = db.connect(DB_USER, DB_PASSWORD, DB_DEFAULT_DB_NAME, DB_HOST, DB_PORT)
 
 # Routes
 @app.get("/", response_class=HTMLResponse)
@@ -45,8 +47,7 @@ def redirect(request: Request, url_id):
 
 @app.post("/shorten", response_class=HTMLResponse)
 def shorten(request: Request, url: Annotated[str, Form()]):
-    print(url_regex, url, url_regex.match(url))
-    if not url_regex.match(url):
+    if not URL_REGEX.match(url):
         return templates.TemplateResponse(
             request=request,
             name="index.html",
@@ -78,7 +79,7 @@ def default(request: Request, full_path: str):
 def generate_url_id():
     url_id = ""
     for i in range(URL_ID_LEN):
-        rand = random.randint(0, len(url_id_chars) - 1)
-        url_id += url_id_chars[rand]
+        rand = random.randint(0, len(URL_ID_CHARS) - 1)
+        url_id += URL_ID_CHARS[rand]
     return url_id
         
