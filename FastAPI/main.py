@@ -20,7 +20,8 @@ app = FastAPI(
 )
 #app.mount("/static", StaticFiles(directory="templates"))
 templates = Jinja2Templates(directory="templates")
-url_regex = re.compile("^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$")
+#"^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$"
+url_regex = re.compile("^https?:\/\/(www\.)?[-a-zA-Z0-9@:%_\+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?$")
 url_id_chars = "ABCDEFGHIJKLMOPQRSTUVWXYZabcdefghijklmopqrstuvwxyz0123456789"
 
 # DB connection init
@@ -44,7 +45,8 @@ def redirect(request: Request, url_id):
 
 @app.post("/shorten", response_class=HTMLResponse)
 def shorten(request: Request, url: Annotated[str, Form()]):
-    if len(url) > URL_MAX_LEN:
+    print(url_regex, url, url_regex.match(url))
+    if not url_regex.match(url):
         return templates.TemplateResponse(
             request=request,
             name="index.html",
