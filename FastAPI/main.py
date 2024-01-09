@@ -65,7 +65,7 @@ def shorten(request: Request, url: Annotated[str, Form()]):
     return templates.TemplateResponse(
         request=request,
         name="shortened.html",
-        context={"shortened_url": f"http://{HOST}:{PORT}/{url_id}"}
+        context={"shortened_url": f"{request.base_url}{url_id}"}
     )
 
 @app.route("/{full_path:path}")
