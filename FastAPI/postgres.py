@@ -7,7 +7,7 @@ class DBConnection():
     def insert(self, url, url_id):
         cur = self.connection.cursor()
         cur.execute(
-            "INSERT INTO url (url_id, base_url) VALUES (%s, %s)",
+            "INSERT INTO url (url_id, target_url) VALUES (%s, %s)",
             (url_id, url)
         )
         self.connection.commit()
@@ -16,7 +16,7 @@ class DBConnection():
     def get(self, url_id):
         cur = self.connection.cursor()
         cur.execute(
-            "SELECT base_url FROM url WHERE url_id = %s",
+            "SELECT target_url FROM url WHERE url_id = %s",
             (url_id,)
         )
         res = cur.fetchone()
