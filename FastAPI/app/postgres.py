@@ -32,5 +32,4 @@ def connect(user: str, password: str, dbname: str, host: str = "localhost", port
         password=password,
         dbname=dbname
     )
-    print(type(connection))
     return DBConnection(connection)
