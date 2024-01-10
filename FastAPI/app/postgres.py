@@ -1,10 +1,10 @@
 import psycopg2
 
 class DBConnection():
-    def __init__(self, connection):
+    def __init__(self, connection: psycopg2.extensions.connection):
         self.connection = connection
     
-    def insert(self, url, url_id):
+    def insert(self, url: str, url_id: str) -> None:
         cur = self.connection.cursor()
         cur.execute(
             "INSERT INTO url (url_id, target_url) VALUES (%s, %s)",
@@ -13,7 +13,7 @@ class DBConnection():
         self.connection.commit()
         cur.close()
 
-    def get(self, url_id):
+    def get(self, url_id: str) -> str:
         cur = self.connection.cursor()
         cur.execute(
             "SELECT target_url FROM url WHERE url_id = %s",
@@ -24,7 +24,7 @@ class DBConnection():
 
         return res[0] if res else None
 
-def connect(user, password, dbname, host = "localhost", port = 5432):
+def connect(user: str, password: str, dbname: str, host: str = "localhost", port: int = 5432) -> DBConnection:
     connection = psycopg2.connect(
         host=host,
         port=port,
@@ -32,4 +32,5 @@ def connect(user, password, dbname, host = "localhost", port = 5432):
         password=password,
         dbname=dbname
     )
+    print(type(connection))
     return DBConnection(connection)
