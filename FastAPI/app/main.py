@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, Response, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 
 from typing import Annotated
 import os
@@ -15,6 +16,9 @@ DB_PORT = int(os.getenv("DB_PORT", 5432))
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
 DB_DEFAULT_DB_NAME = os.getenv("DB_DEFAULT_DB_NAME", "url_shortener")
+DB_PORT=9000
+DB_USER="admin"
+DB_PASSWORD="passwd"
 
 # App init
 app = FastAPI(
@@ -22,6 +26,7 @@ app = FastAPI(
     title = "URL Shortener",
     summary = "Shorten an URL"
 )
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Jinja init
 templates = Jinja2Templates(directory="templates")
@@ -31,14 +36,14 @@ query = db.connect(DB_USER, DB_PASSWORD, DB_DEFAULT_DB_NAME, DB_HOST, DB_PORT)
 
 # Routes
 @app.get("/", response_class=HTMLResponse)
-def root(request: Request) -> HTMLResponse:
+async def root(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request=request,
         name="index.html"
     )
 
 @app.get("/{url_id}", response_class=HTMLResponse)
-def redirect(request: Request, url_id: str) -> HTMLResponse:
+async def redirect(request: Request, url_id: str) -> HTMLResponse:
     url = query.get(url_id)
 
     if not url:
@@ -46,13 +51,13 @@ def redirect(request: Request, url_id: str) -> HTMLResponse:
     return RedirectResponse(url)
 
 @app.post("/shorten", response_class=HTMLResponse)
-def shorten(request: Request, url: Annotated[str, Form()]) -> HTMLResponse:
+async def shorten(request: Request, url: Annotated[str, Form()]) -> HTMLResponse:  
     if not utils.validate_url(url):
         return templates.TemplateResponse(
             request=request,
             name="index.html",
             context={
-                "error_message": "Invalid URL",
+                "input_error": "Invalid URL",
                 "url": url
             }
         )
@@ -70,7 +75,7 @@ def shorten(request: Request, url: Annotated[str, Form()]) -> HTMLResponse:
     )
 
 @app.route("/{full_path:path}")
-def default(request: Request, full_path: str) -> HTMLResponse:
+async def default(request: Request, full_path: str = "") -> HTMLResponse:
     return templates.TemplateResponse(
         request=request,
         name="not_found.html"
