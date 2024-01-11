@@ -47,7 +47,7 @@ async def redirect(request: Request, url_id: str) -> HTMLResponse:
     url = query.get(url_id)
 
     if not url:
-        return default(request, "")
+        return await default(request, "")
     return RedirectResponse(url)
 
 @app.post("/shorten", response_class=HTMLResponse)
@@ -75,7 +75,7 @@ async def shorten(request: Request, url: Annotated[str, Form()]) -> HTMLResponse
     )
 
 @app.route("/{full_path:path}")
-async def default(request: Request, full_path: str = "") -> HTMLResponse:
+async def default(request: Request, full_path: str) -> HTMLResponse:
     return templates.TemplateResponse(
         request=request,
         name="not_found.html"
