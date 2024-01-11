@@ -16,9 +16,6 @@ DB_PORT = int(os.getenv("DB_PORT", 5432))
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
 DB_DEFAULT_DB_NAME = os.getenv("DB_DEFAULT_DB_NAME", "url_shortener")
-DB_PORT=9000
-DB_USER="admin"
-DB_PASSWORD="passwd"
 
 # App init
 app = FastAPI(
