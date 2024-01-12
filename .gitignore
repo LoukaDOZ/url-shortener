@@ -1,1 +1,2 @@
-./FastAPI/app/__pycache__
+FastAPI/app/__pycache__/*
+FastAPI/db/data/*
