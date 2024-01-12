@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block body %}
+    {{ super() }}
+
+    <div class="container mt-1">
+        <h1>My shortened URLs</h1>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">URL</th>
+                    <th scope="col">Shortened</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+                <tbody>
+                    {% for row in urls %}
+                        <tr>
+                            <td scope="row">{{ row["target_url"] }}</td>
+                            <td>{{ row["shortened_url"] }}</td>
+                            <th>Copy</th>
+                        </tr>
+                    {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

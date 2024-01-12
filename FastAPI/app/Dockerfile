@@ -4,6 +4,7 @@ RUN apt update && apt install python3-pip -y
 RUN pip install fastapi
 RUN pip install jinja2
 RUN pip install psycopg2-binary
+RUN pip install passlib
 RUN pip install python-multipart
 RUN pip install "uvicorn[standard]"
 
