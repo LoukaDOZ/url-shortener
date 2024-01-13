@@ -58,7 +58,7 @@ async def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:
         url = url.strip()
         failed_url_size = not check_url_size(url)
         failed_url_regex = not check_url_regex(url)
-    elif not session.is_set(request, "pending_shortening"):
+    elif not session.is_set(request, "pending_url_id"):
         missing_url = True
 
     if failed_url_size or failed_url_regex or missing_url:
@@ -80,19 +80,22 @@ async def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:
     url_id = None
     username = None
 
-    if url:    
+    if url:
         while True:
             url_id = generate_url_id()
             if not db.get_target_url(url_id):
                 break
     else:
-        url_id = session.get(request, "pending_shortening")
-        session.delete(request, "pending_shortening")
+        url_id = session.get(request, "pending_url_id")
+        url = session.get(request, "pending_target_url")
+        session.delete(request, "pending_url_id")
+        session.delete(request, "pending_target_url")
 
-    if session.is_set(request, "username"):
+    if session.is_user_connected(request):
         username = session.get(request, "username")
     elif not guest:
-        session.set(request, "pending_shortening", url_id)
+        session.set(request, "pending_url_id", url_id)
+        session.set(request, "pending_target_url", url)
         return redirect(f"/login?shortening=true", True)
 
     db.insert_url(url, url_id, username)
@@ -103,7 +106,7 @@ async def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:
     )
 
 async def my_urls_page(request: Request) -> HTMLResponse:
-    if not session.is_set(request, "username"):
+    if not session.is_user_connected(request):
         return redirect("/login")
 
     query_urls = db.get_user_urls(session.get(request, "username"))
