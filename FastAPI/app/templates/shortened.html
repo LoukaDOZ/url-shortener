@@ -38,18 +38,15 @@
         function copyURL() {
             navigator.clipboard.writeText("{{ shortened_url }}");
 
-            const tooltip = bootstrap.Tooltip.getInstance(document.getElementById('copy-button'));
+            const tooltip = bootstrap.Tooltip.getInstance(document.getElementById("copy-button"));
             
             if(timeoutID) {
-                console.log("clear", timeoutID);
                 clearTimeout(timeoutID);
             } else {
-                console.log("show", timeoutID);
                 tooltip.show();
             }
 
             timeoutID = setTimeout(() => {
-                console.log("hide", timeoutID);
                 tooltip.hide();
                 timeoutID = null;
             }, 4000);

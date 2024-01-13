@@ -54,3 +54,9 @@ def compare_password(plain_password: str, hashed_password: str) -> str:
 
 def create_url(request: Request, url_id: str) -> str:
     return f"{request.base_url}r/{url_id}"
+
+def session_key_set(request: Request, key: str) -> bool:
+    return key in request.session and request.session[key]
+
+def connected(request: Request) -> bool:
+    return session_key_set(request, "username")

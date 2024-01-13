@@ -2,7 +2,18 @@
 {% block body %}
     {{ super() }}
 
-    <div class="container mt-1">
+    <div class="container mt-1">        
+        {% if shortening is eq True %}
+            <form id="form-guest" class="mb-2" action="/shorten?guest=true" method="post">
+                <a href="#" class="fs-6 link-underline link-underline-opacity-0 link-underline-opacity-100-hover" onclick="continueAsGuest()">
+                    Continue as guest
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8"/>
+                    </svg>
+                </a>
+            </form>
+        {% endif %}
+
         <h1>My account</h1>
 
         <div class="nav nav-tabs mb-4" id="nav-tab" role="tablist">
@@ -12,7 +23,7 @@
 
         <div class="tab-content">
             <div id="login-form" class="tab-pane fade {% if tab is eq 'login' or tab is not defined %} show active {% endif %}" id="nav-login" role="tabpanel" aria-labelledby="nav-login-tab" tabindex="0">        
-                <form action="/login" method="post" onsubmit="onLogin()">
+                <form action="{% if shortening is eq True %} /login?shortening=true {% else %} /login {% endif %}" method="post" onsubmit="onLogin()">
                     <div class="mb-3 position-relative">
                         <label for="username" class="form-label">Username</label>
                         <input type="text" id="username" name="username" class="form-control" value="{{ login_username }}" required="required"/>
@@ -36,7 +47,7 @@
             </div>
 
             <div id="register-form" class="tab-pane fade {% if tab is eq 'register' %} show active {% endif %}" id="nav-register" role="tabpanel" aria-labelledby="nav-register-tab" tabindex="0">
-                <form action="/register" method="post" onsubmit="onRegister()">
+                <form action="{% if shortening is eq True %} /register?shortening=true {% else %} /register {% endif %}" method="post" onsubmit="onRegister()">
                     <div class="mb-3 position-relative">
                         <label for="username" class="form-label">Username</label>
                         <input type="text" id="username" name="username" class="form-control" value="{{ register_username }}" required="required"/>
@@ -67,6 +78,10 @@
         </div>
     </div>
     <script>
+        function continueAsGuest(e) {
+            document.getElementById("form-guest").submit();
+        }
+
         function onLogin(e) {
             document.getElementById("login-button-text").style.display = "none";
             document.getElementById("login-button-spinner").style.display = "block";

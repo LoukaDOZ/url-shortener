@@ -37,10 +37,8 @@ query = db.connect(DB_USER, DB_PASSWORD, DB_DEFAULT_DB_NAME, DB_HOST, DB_PORT)
 # Routes
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request=request,
-        name="index.html"
-    )
+    print(request.session)
+    return RedirectResponse("/shorten", status_code=status.HTTP_302_FOUND)
 
 @app.get("/r/{url_id}", response_class=HTMLResponse)
 async def redirect(request: Request, url_id: str) -> HTMLResponse:
@@ -51,52 +49,96 @@ async def redirect(request: Request, url_id: str) -> HTMLResponse:
         return await default(request, "")
     return RedirectResponse(url)
 
+@app.get("/shorten", response_class=HTMLResponse)
+async def root(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "connected": utils.connected(request)
+        }
+    )
+
 @app.post("/shorten", response_class=HTMLResponse)
-async def shorten(request: Request, url: Annotated[str, Form()]) -> HTMLResponse:  
-    url = url.strip()
-    print(request.session)
+async def shorten(request: Request,
+        url: Annotated[str, Form()] = "",
+        guest: bool = False) -> HTMLResponse:  
+    missing_url = False
+    failed_url_size = False
+    failed_url_regex = False
 
-    failed_url_size = not utils.check_url_size(url)
-    failed_url_regex = not utils.check_url_regex(url)
+    if url:
+        url = url.strip()
+        failed_url_size = not utils.check_url_size(url)
+        failed_url_regex = not utils.check_url_regex(url)
+    elif not utils.session_key_set(request, "pending_shortening"):
+        missing_url = True
 
-    if failed_url_size or failed_url_regex:
-        error_message = "Invalid URL" if failed_url_regex else "URL is too long"
+    if failed_url_size or failed_url_regex or missing_url:
+        context={
+            "connected": utils.connected(request),
+            "url": url
+        }
+
+        if missing_url:
+            context["global_error"] = "An error has occur"
+        elif failed_url_regex:
+            context["input_error"] = "Invalid URL"
+        else:
+            context["input_error"] = "URL is too long"
 
         return templates.TemplateResponse(
             request=request,
             name="index.html",
-            context={
-                "input_error": error_message,
-                "url": url
-            }
+            context=context
         )
-    
-    while True:
-        url_id = utils.generate_url_id()
-        if not query.get_target_url(url_id):
-            break
-    
-    username = request.session["username"] if "username" in request.session else None
+
+    url_id = None
+    username = None
+
+    if url:    
+        while True:
+            url_id = utils.generate_url_id()
+            if not query.get_target_url(url_id):
+                break
+    else:
+        url_id = request.session["pending_shortening"]
+        request.session["pending_shortening"] = None
+
+    if utils.session_key_set(request, "username"):
+        username = request.session["username"]
+    elif not guest:
+        request.session["pending_shortening"] = url_id
+        return RedirectResponse(f"/login?shortening=true", status_code=status.HTTP_302_FOUND)
+
     query.insert_url(url, url_id, username)
     return templates.TemplateResponse(
         request=request,
         name="shortened.html",
-        context={"shortened_url": utils.create_url(request, url_id)}
+        context={
+            "connected": utils.connected(request),
+            "shortened_url": utils.create_url(request, url_id)
+        }
     )
 
 @app.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request, redirect: str = None) -> HTMLResponse:
+async def login_page(request: Request, 
+        tab: str = "login",
+        shortening: bool = False) -> HTMLResponse:
     return templates.TemplateResponse(
         request=request,
         name="login.html",
-        context={"redirect": redirect}
+        context={
+            "tab": tab,
+            "shortening": shortening
+        }
     )
 
 @app.post("/login", response_class=HTMLResponse)
 async def login(request: Request,
         username: Annotated[str, Form()],
         password: Annotated[str, Form()],
-        redirect: str = None) -> HTMLResponse:
+        shortening: bool = False) -> HTMLResponse:
     username = username.strip()
     password = password.strip()
     hashed_password = query.get_user_password(username)
@@ -112,16 +154,24 @@ async def login(request: Request,
             name="login.html",
             context={
                 "tab": "login",
+                "shortening": shortening,
                 "login_username": username,
                 "global_error": "Invalid credentials"
             }
         )
     
     request.session["username"] = username
+    if shortening:
+        return RedirectResponse("/shorten")
+
     return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
 
 @app.post("/register", response_class=HTMLResponse)
-async def register(request: Request, username: Annotated[str, Form()], password: Annotated[str, Form()], confirm_password: Annotated[str, Form()]) -> HTMLResponse:
+async def register(request: Request,
+        username: Annotated[str, Form()],
+        password: Annotated[str, Form()],
+        confirm_password: Annotated[str, Form()],
+        shortening: bool = False) -> HTMLResponse:
     username = username.strip()
     password = password.strip()
     confirm_password = confirm_password.strip()
@@ -153,24 +203,29 @@ async def register(request: Request, username: Annotated[str, Form()], password:
             name="login.html",
             context={
                 "tab": "register",
+                "shortening": shortening,
                 "register_username": username,
                 error_name: error_message
             }
         )
     
     query.insert_user(username, utils.hash_password(password))
-    return templates.TemplateResponse(
-        request=request,
-        name="login.html",
-        context={
-            "tab": "login",
-            "login_username": username
-        }
-    )
+    if shortening:
+        return RedirectResponse("/shorten")
+    
+    return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
+
+@app.get("/disconnect", response_class=HTMLResponse)
+async def disconect(request: Request) -> HTMLResponse:
+    request.session["username"] = None
+    return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
 
 @app.get("/my-urls", response_class=HTMLResponse)
 async def my_urls_page(request: Request) -> HTMLResponse:
-    query_urls = query.get_user_urls("hello")
+    if not utils.connected(request):
+        return RedirectResponse("/login")
+
+    query_urls = query.get_user_urls(request.session["username"])
     urls = []
 
     if query_urls:
@@ -183,13 +238,19 @@ async def my_urls_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request=request,
         name="my_urls.html",
-        context={"urls": urls}
+        context={
+            "connected": True,
+            "urls": urls
+        }
     )
 
 @app.route("/{full_path:path}")
 async def default(request: Request, full_path: str = "") -> HTMLResponse:
     return templates.TemplateResponse(
         request=request,
-        name="not_found.html"
+        name="not_found.html",
+        context={
+            "connected": utils.connected(request)
+        }
     )
         
