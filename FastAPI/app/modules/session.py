@@ -10,7 +10,13 @@ def get(request: Request, key: str) -> str:
     return request.session[key]
 
 def is_set(request: Request, key: str) -> bool:
-    return key in request.session and request.session[key]
+    return key in request.session and bool(request.session[key])
 
-def is_connected(request: Request):
+def connect_user(request: Request, username: str) -> None:
+    set(request, "username", username)
+
+def disconnect_user(request: Request) -> None:
+    delete(request, "username")
+
+def is_user_connected(request: Request) -> bool:
     return is_set(request, "username")

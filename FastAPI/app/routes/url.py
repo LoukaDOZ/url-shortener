@@ -44,11 +44,12 @@ async def redirect_to_target_url(request: Request, url_id: str) -> HTMLResponse:
     return redirect(url)
 
 async def shorten_page(request: Request) -> HTMLResponse:
+    print(request.session, session.is_user_connected(request))
     return render(
         request = request,
         page = "index.html",
         context = {
-            "connected": session.is_connected(request)
+            "connected": session.is_user_connected(request)
         }
     )
 
@@ -66,7 +67,7 @@ async def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:
 
     if failed_url_size or failed_url_regex or missing_url:
         context={
-            "connected": session.is_connected(request),
+            "connected": session.is_user_connected(request),
             "url": url
         }
 
@@ -106,7 +107,7 @@ async def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:
         request = request,
         page = "shortened.html",
         context = {
-            "connected": session.is_connected(request),
+            "connected": session.is_user_connected(request),
             "shortened_url": create_url(request, url_id)
         }
     )

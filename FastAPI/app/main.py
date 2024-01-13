@@ -30,6 +30,7 @@ async def redirect(request: Request, url_id: str) -> HTMLResponse:
 
 @app.get("/shorten", response_class=HTMLResponse)
 async def shorten_page(request: Request) -> HTMLResponse:
+    print(request.session)
     return await url_routes.shorten_page(request)
 
 @app.post("/shorten", response_class=HTMLResponse)

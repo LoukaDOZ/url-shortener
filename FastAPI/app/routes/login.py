@@ -71,7 +71,7 @@ async def login(request: Request, username: str, password: str, shortening: bool
             }
         )
     
-    session.set(request, "username", username)
+    session.connect_user(request, username)
 
     if shortening:
         return redirect("/shorten")
@@ -121,12 +121,13 @@ async def register(
         )
     
     db.insert_user(username, utils.hash_password(password))
-    session.set(request, "username", username)
+    session.connect_user(request, username)
 
     if shortening:
         return redirect("/shorten")
     return redirect("/", True)
 
 async def logout(request: Request) -> HTMLResponse:
-    request.session["username"] = None
+    session.disconnect_user(request)
+    print(request.session)
     return redirect("/", True)

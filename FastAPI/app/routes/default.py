@@ -12,6 +12,6 @@ async def not_found(request: Request) -> HTMLResponse:
         request = request,
         page = "not_found.html",
         context = {
-            "connected": session.is_connected(request)
+            "connected": session.is_user_connected(request)
         }
     )
