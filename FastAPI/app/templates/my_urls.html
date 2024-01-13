@@ -27,7 +27,7 @@
                                 </a>
                             </td>
                             <td>
-                                <a id="copy-{{ loop.index }}" href="#" class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" onclick="copyURL({{ loop.index }}, '{{ row.shortened_url }}')"
+                                <a id="copy-{{ loop.index }}" href="#" class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover" onclick="copyURL('{{ loop.index }}', '{{ row.shortened_url }}')"
                                     data-bs-toggle="tooltip"
                                     data-bs-placement="bottom"
                                     data-bs-title="Copied !"

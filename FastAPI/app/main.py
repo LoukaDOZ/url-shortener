@@ -37,7 +37,6 @@ query = db.connect(DB_USER, DB_PASSWORD, DB_DEFAULT_DB_NAME, DB_HOST, DB_PORT)
 # Routes
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request) -> HTMLResponse:
-    print(request.session)
     return RedirectResponse("/shorten", status_code=status.HTTP_302_FOUND)
 
 @app.get("/r/{url_id}", response_class=HTMLResponse)
@@ -51,6 +50,7 @@ async def redirect(request: Request, url_id: str) -> HTMLResponse:
 
 @app.get("/shorten", response_class=HTMLResponse)
 async def root(request: Request) -> HTMLResponse:
+    print(request.session)
     return templates.TemplateResponse(
         request=request,
         name="index.html",
@@ -210,6 +210,7 @@ async def register(request: Request,
         )
     
     query.insert_user(username, utils.hash_password(password))
+    request.session["username"] = username
     if shortening:
         return RedirectResponse("/shorten")
     
