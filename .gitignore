@@ -1,2 +1,4 @@
 FastAPI/app/__pycache__/*
+FastAPI/app/modules/__pycache__/*
+FastAPI/app/routes/__pycache__/*
 FastAPI/db/data/*
