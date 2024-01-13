@@ -6,7 +6,7 @@ import re
 
 from modules.responses import render, redirect
 from modules.postgres import query as db
-import modules.session as session
+from modules.session import session_manager as session
 
 # Init Passlib hash
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -40,6 +40,8 @@ def compare_password(plain_password: str, hashed_password: str) -> str:
 
 # Routes
 async def login_page(request: Request, tab: str, shortening: bool) -> HTMLResponse:
+    session.get_session(request).delete("is_connected")
+
     return render(
         request = request,
         page = "login.html",
@@ -71,7 +73,9 @@ async def login(request: Request, username: str, password: str, shortening: bool
             }
         )
     
-    session.connect_user(request, username)
+    user_session = session.get_session(request)
+    user_session.set("is_connected", True)
+    user_session.set("username", username)
 
     if shortening:
         return redirect("/shorten")
@@ -91,7 +95,7 @@ async def register(
 
     if not check_username_size(username):
         error_name = "register_username_error"
-        error_message = f"Username size should be between {utils.USERNAME_MIN_LEN} and {utils.USERNAME_MAX_LEN} characters"
+        error_message = f"Username size should be between {USERNAME_MIN_LEN} and {USERNAME_MAX_LEN} characters"
     elif not check_username_regex(username):
         error_name = "register_username_error"
         error_message = "Username contains invalid characters"
@@ -100,7 +104,7 @@ async def register(
         error_message = "Username already exists"
     elif not check_password_size(password):
         error_name = "register_password_error"
-        error_message = f"Password size should be between {utils.PASSWORD_MIN_LEN} and {utils.PASSWORD_MAX_LEN} characters"
+        error_message = f"Password size should be between {PASSWORD_MIN_LEN} and {PASSWORD_MAX_LEN} characters"
     elif not check_password_regex(password):
         error_name = "register_password_error"
         error_message = "Password contains invalid characters"
@@ -120,13 +124,15 @@ async def register(
             }
         )
     
-    db.insert_user(username, utils.hash_password(password))
-    session.connect_user(request, username)
+    db.insert_user(username, hash_password(password))
+    user_session = session.get_session(request)
+    user_session.set("is_connected", True)
+    user_session.set("username", username)
 
     if shortening:
         return redirect("/shorten")
     return redirect("/", True)
 
 async def logout(request: Request) -> HTMLResponse:
-    session.disconnect_user(request)
+    session.get_session(request).delete("is_connected")
     return redirect("/", True)

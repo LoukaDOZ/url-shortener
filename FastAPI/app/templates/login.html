@@ -2,9 +2,16 @@
 {% block body %}
     {{ super() }}
 
-    <div class="container mt-1">        
+    <div class="container mt-1">
         {% if shortening is eq True %}
             <form id="form-guest" class="mb-2" action="/shorten?guest=true" method="post">
+                <a href="/" class="fs-6 me-3 link-underline link-underline-opacity-0 link-underline-opacity-100-hover">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+                    </svg>
+                    Cancel
+                </a>
+                
                 <a href="#" class="fs-6 link-underline link-underline-opacity-0 link-underline-opacity-100-hover" onclick="continueAsGuest()">
                     Continue as guest
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right" viewBox="0 0 16 16">

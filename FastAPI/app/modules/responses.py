@@ -3,13 +3,13 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import starlette.status as status
 
-from modules.session import is_user_connected
+from modules.session import session_manager as session
 
 # Jinja init
 templates = Jinja2Templates(directory="templates")
 
 def render(request: Request, page: str, context: dict = {}) -> HTMLResponse:
-    context["connected"] = is_user_connected(request)
+    context["connected"] = session.get_session(request).get("is_connected")
 
     return templates.TemplateResponse(
         request = request,

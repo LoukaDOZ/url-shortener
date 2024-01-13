@@ -1,22 +1,72 @@
 from fastapi import Request
 
-def set(request: Request, key: str, value: str) -> None:
-    request.session[key] = value
+import random
 
-def delete(request: Request, key: str) -> None:
-    request.session[key] = None
+class Session():
+    def __init__(self, sid: str):
+        self.sid = sid
+        self.data = {
+            "sid": sid
+        }
+    
+    def set(self, key: str, value: str) -> None:
+        self.data[key] = value
+    
+    def get(self, key: str) -> str:
+        return self.data[key] if self.has(key) else None
+    
+    def delete(self, key: str) -> None:
+        self.set(key, None)
+    
+    def has(self, key: str) -> bool:
+        return key in self.data and bool(self.data[key])
 
-def get(request: Request, key: str) -> str:
-    return request.session[key]
+class SessionManager():
+    SESSION_ID_LEN = 16
+    SESSION_ID_CHARS = "ABCDEFGHIJKLMOPQRSTUVWXYZabcdefghijklmopqrstuvwxyz0123456789"
 
-def is_set(request: Request, key: str) -> bool:
-    return key in request.session and bool(request.session[key])
+    def __init__(self):
+        self.sessions = []
+    
+    def get_session(self, request: Request) -> Session:
+        has_sid = self.__request_has_sid__(request)
+        s = self.__find_session__(request.session["sid"]) if has_sid else None
 
-def connect_user(request: Request, username: str) -> None:
-    set(request, "username", username)
+        if not s:
+            s = self.__create_session__(request)
+        
+        return s
+    
+    def __create_session__(self, request: Request) -> None:
+        sid = self.__generate_session_id__()
 
-def disconnect_user(request: Request) -> None:
-    delete(request, "username")
+        while self.__find_session__(sid) is not None:
+            sid = self.__generate_session_id__()
+    
+        s = Session(sid)
+        self.sessions.append(s)
+        request.session["sid"] = sid
+        return s
 
-def is_user_connected(request: Request) -> bool:
-    return is_set(request, "username")
+    def __find_session__(self, sid: str) -> Session:
+        for s in self.sessions:
+            if s.sid == sid:
+                return s
+        return None
+    
+    def __delete_session__(self, sid: str) -> None:
+        s = self.__find_session__(sid)
+        if s:
+            self.sessions.remove(s)
+    
+    def __request_has_sid__(self, request: Request) -> bool:
+        return "sid" in request.session and bool(request.session["sid"])
+
+    def __generate_session_id__(self) -> str:
+        sid = ""
+        for i in range(self.SESSION_ID_LEN):
+            rand = random.randint(0, len(self.SESSION_ID_CHARS) - 1)
+            sid += self.SESSION_ID_CHARS[rand]
+        return sid
+
+session_manager = SessionManager()

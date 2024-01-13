@@ -8,7 +8,7 @@ import routes.default as default_routes
 
 from modules.responses import render, redirect
 from modules.postgres import query as db
-import modules.session as session
+from modules.session import session_manager as session
 
 # Utils
 URL_ID_LEN = 8
@@ -53,12 +53,13 @@ async def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:
     missing_url = False
     failed_url_size = False
     failed_url_regex = False
+    user_session = session.get_session(request)
 
     if url:
         url = url.strip()
         failed_url_size = not check_url_size(url)
         failed_url_regex = not check_url_regex(url)
-    elif not session.is_set(request, "pending_url_id"):
+    elif not user_session.has("pending_url_id"):
         missing_url = True
 
     if failed_url_size or failed_url_regex or missing_url:
@@ -86,16 +87,16 @@ async def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:
             if not db.get_target_url(url_id):
                 break
     else:
-        url_id = session.get(request, "pending_url_id")
-        url = session.get(request, "pending_target_url")
-        session.delete(request, "pending_url_id")
-        session.delete(request, "pending_target_url")
+        url_id = user_session.get("pending_url_id")
+        url = user_session.get("pending_target_url")
+        user_session.delete("pending_url_id")
+        user_session.delete("pending_target_url")
 
-    if session.is_user_connected(request):
-        username = session.get(request, "username")
+    if user_session.has("is_connected"):
+        username = user_session.get("username")
     elif not guest:
-        session.set(request, "pending_url_id", url_id)
-        session.set(request, "pending_target_url", url)
+        user_session.set("pending_url_id", url_id)
+        user_session.set("pending_target_url", url)
         return redirect(f"/login?shortening=true", True)
 
     db.insert_url(url, url_id, username)
@@ -106,10 +107,12 @@ async def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:
     )
 
 async def my_urls_page(request: Request) -> HTMLResponse:
-    if not session.is_user_connected(request):
+    user_session = session.get_session(request)
+
+    if not user_session.has("is_connected"):
         return redirect("/login")
 
-    query_urls = db.get_user_urls(session.get(request, "username"))
+    query_urls = db.get_user_urls(user_session.get("username"))
     urls = []
 
     if query_urls:
