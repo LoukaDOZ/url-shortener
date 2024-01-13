@@ -10,6 +10,7 @@
                 <tr>
                     <th scope="col">URL</th>
                     <th scope="col">Shortened</th>
+                    <th scope="col">Expiration date</th>
                     <th scope="col"></th>
                 </tr>
             </thead>
@@ -25,6 +26,9 @@
                                 <a href="{{ row.shortened_url }}"  class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover">
                                     {{ row.shortened_url }}
                                 </a>
+                            </td>
+                            <td style="min-width: 200px">
+                                {{ row.expiration_date }}
                             </td>
                             <td style="min-width: 90px">
                                 <a id="copy-{{ loop.index }}" href="#" class="btn btn-outline-primary p-2" onclick="copyURL('{{ loop.index }}', '{{ row.shortened_url }}')"

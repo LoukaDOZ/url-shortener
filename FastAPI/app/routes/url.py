@@ -1,8 +1,10 @@
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 
-import re
+from datetime import datetime
+import time
 import random
+import re
 
 import routes.default as default_routes
 
@@ -11,6 +13,8 @@ from modules.postgres import query as db
 from modules.session import session_manager as session
 
 # Utils
+URL_LIFETIME = 604800 # 7 days in seconds
+
 URL_ID_LEN = 8
 URL_ID_CHARS = "ABCDEFGHIJKLMOPQRSTUVWXYZabcdefghijklmopqrstuvwxyz0123456789"
 
@@ -31,12 +35,23 @@ def generate_url_id() -> str:
         url_id += URL_ID_CHARS[rand]
     return url_id
 
+def get_url_expiration_date():
+    return int(time.time()) + URL_LIFETIME
+
+def date_to_str(date: int):
+    return datetime.fromtimestamp(date).strftime("%d/%m/%Y %H:%M")
+
 def create_url(request: Request, url_id: str) -> str:
     return f"{request.base_url}r/{url_id}"
+
+def remove_expired_urls():
+    db.delete_expired_urls(int(time.time()))
 
 # Routes
 async def redirect_to_target_url(request: Request, url_id: str) -> HTMLResponse:
     url_id = url_id.strip()
+
+    remove_expired_urls()
     url = db.get_target_url(url_id)
 
     if not url:
@@ -99,11 +114,15 @@ async def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:
         user_session.set("pending_target_url", url)
         return redirect(f"/login?shortening=true", True)
 
-    db.insert_url(url, url_id, username)
+    expiration_date = get_url_expiration_date()
+    db.insert_url(url, url_id, expiration_date, username)
     return render(
         request = request,
         page = "shortened.html",
-        context = { "shortened_url": create_url(request, url_id) }
+        context = {
+            "shortened_url": create_url(request, url_id),
+            "expiration_date": date_to_str(expiration_date)
+        }
     )
 
 async def my_urls_page(request: Request) -> HTMLResponse:
@@ -119,7 +138,8 @@ async def my_urls_page(request: Request) -> HTMLResponse:
         for u in query_urls:
             urls.append({
                 "target_url": u[0],
-                "shortened_url": create_url(request, u[1])
+                "shortened_url": create_url(request, u[1]),
+                "expiration_date": date_to_str(u[2])
             })
 
     return render(

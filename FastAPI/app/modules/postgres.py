@@ -2,22 +2,28 @@ import psycopg2
 
 import os
 
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = int(os.getenv("DB_PORT", 5432))
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
+DB_DEFAULT_DB_NAME = os.getenv("DB_DEFAULT_DB_NAME", "url_shortener")
+
 class DBConnection():
     def __init__(self, connection: psycopg2.extensions.connection):
         self.connection = connection
     
-    def insert_url(self, url: str, url_id: str, username: str = None) -> None:
+    def insert_url(self, url: str, url_id: str, expiration_date: int, username: str = None) -> None:
         cur = self.connection.cursor()
 
         if username:
             cur.execute(
-                "INSERT INTO url (url_id, target_url, username) VALUES (%s, %s, %s)",
-                (url_id, url, username)
+                "INSERT INTO url (url_id, target_url, expiration_date, username) VALUES (%s, %s, %s, %s)",
+                (url_id, url, expiration_date, username)
             )
         else:
             cur.execute(
-                "INSERT INTO url (url_id, target_url) VALUES (%s, %s)",
-                (url_id, url)
+                "INSERT INTO url (url_id, target_url, expiration_date) VALUES (%s, %s, %s)",
+                (url_id, url, expiration_date)
             )
 
         self.connection.commit()
@@ -33,8 +39,17 @@ class DBConnection():
         cur.close()
 
         return res[0] if res else None
+    
+    def delete_expired_urls(self, current_date: int) -> None:
+        cur = self.connection.cursor()
+        cur.execute(
+            "DELETE FROM url WHERE expiration_date < %s",
+            (current_date, )
+        )
+        self.connection.commit()
+        cur.close()
 
-    def insert_user(self, username: str, hash_password: str):
+    def insert_user(self, username: str, hash_password: str) -> None:
         cur = self.connection.cursor()
         cur.execute(
             "INSERT INTO users (username, password) VALUES (%s, %s)",
@@ -43,7 +58,7 @@ class DBConnection():
         self.connection.commit()
         cur.close()
 
-    def get_user_password(self, username: str):
+    def get_user_password(self, username: str) -> str:
         cur = self.connection.cursor()
         cur.execute(
             "SELECT password FROM users WHERE username = %s",
@@ -54,10 +69,10 @@ class DBConnection():
 
         return res[0] if res else None
 
-    def get_user_urls(self, username: str) -> str:
+    def get_user_urls(self, username: str) -> list:
         cur = self.connection.cursor()
         cur.execute(
-            "SELECT target_url, url_id FROM url WHERE username = %s",
+            "SELECT target_url, url_id, expiration_date FROM url WHERE username = %s",
             (username,)
         )
 
@@ -67,10 +82,10 @@ class DBConnection():
 
 query = DBConnection(
     psycopg2.connect(
-        host = os.getenv("DB_HOST", "localhost"),
-        port = int(os.getenv("DB_PORT", 5432)),
-        user = os.getenv("DB_USER", "postgres"),
-        password = os.getenv("DB_PASSWORD", "postgres"),
-        dbname = os.getenv("DB_DEFAULT_DB_NAME", "url_shortener")
+        host = DB_HOST,
+        port = DB_PORT,
+        user = DB_USER,
+        password = DB_PASSWORD,
+        dbname = DB_DEFAULT_DB_NAME
     )
 )
