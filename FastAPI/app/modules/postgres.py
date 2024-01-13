@@ -1,5 +1,7 @@
 import psycopg2
 
+import os
+
 class DBConnection():
     def __init__(self, connection: psycopg2.extensions.connection):
         self.connection = connection
@@ -63,12 +65,12 @@ class DBConnection():
         cur.close()
         return res
 
-def connect(user: str, password: str, dbname: str, host: str = "localhost", port: int = 5432) -> DBConnection:
-    connection = psycopg2.connect(
-        host=host,
-        port=port,
-        user=user,
-        password=password,
-        dbname=dbname
+query = DBConnection(
+    psycopg2.connect(
+        host = os.getenv("DB_HOST", "localhost"),
+        port = int(os.getenv("DB_PORT", 5432)),
+        user = os.getenv("DB_USER", "postgres"),
+        password = os.getenv("DB_PASSWORD", "postgres"),
+        dbname = os.getenv("DB_DEFAULT_DB_NAME", "url_shortener")
     )
-    return DBConnection(connection)
+)
