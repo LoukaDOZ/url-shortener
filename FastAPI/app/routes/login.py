@@ -129,5 +129,4 @@ async def register(
 
 async def logout(request: Request) -> HTMLResponse:
     session.disconnect_user(request)
-    print(request.session)
     return redirect("/", True)

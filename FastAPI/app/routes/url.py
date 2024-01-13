@@ -44,13 +44,9 @@ async def redirect_to_target_url(request: Request, url_id: str) -> HTMLResponse:
     return redirect(url)
 
 async def shorten_page(request: Request) -> HTMLResponse:
-    print(request.session, session.is_user_connected(request))
     return render(
         request = request,
-        page = "index.html",
-        context = {
-            "connected": session.is_user_connected(request)
-        }
+        page = "index.html"
     )
 
 async def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:  
@@ -66,10 +62,7 @@ async def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:
         missing_url = True
 
     if failed_url_size or failed_url_regex or missing_url:
-        context={
-            "connected": session.is_user_connected(request),
-            "url": url
-        }
+        context={ "url": url }
 
         if missing_url:
             context["global_error"] = "An error has occur"
@@ -106,10 +99,7 @@ async def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:
     return render(
         request = request,
         page = "shortened.html",
-        context = {
-            "connected": session.is_user_connected(request),
-            "shortened_url": create_url(request, url_id)
-        }
+        context = { "shortened_url": create_url(request, url_id) }
     )
 
 async def my_urls_page(request: Request) -> HTMLResponse:
@@ -129,8 +119,5 @@ async def my_urls_page(request: Request) -> HTMLResponse:
     return render(
         request = request,
         page = "my_urls.html",
-        context = {
-            "connected": True,
-            "urls": urls
-        }
+        context = { "urls": urls }
     )
