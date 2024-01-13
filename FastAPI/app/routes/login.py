@@ -51,7 +51,7 @@ async def login_page(request: Request, tab: str, shortening: bool) -> HTMLRespon
         }
     )
 
-async def login(request: Request, username: str, password: str, shortening: bool = False) -> HTMLResponse:
+async def login(request: Request, username: str, password: str, shortening: bool) -> HTMLResponse:
     username = username.strip()
     password = password.strip()
     hashed_password = db.get_user_password(username)

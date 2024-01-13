@@ -1,12 +1,14 @@
 from fastapi import Request
 
+import time
 import random
 
 class Session():
-    def __init__(self, sid: str):
+    def __init__(self, sid: str, expiration_date: int):
         self.sid = sid
         self.data = {
-            "sid": sid
+            "sid": sid,
+            "expiration_date": expiration_date
         }
     
     def set(self, key: str, value: str) -> None:
@@ -24,6 +26,7 @@ class Session():
 class SessionManager():
     SESSION_ID_LEN = 16
     SESSION_ID_CHARS = "ABCDEFGHIJKLMOPQRSTUVWXYZabcdefghijklmopqrstuvwxyz0123456789"
+    SESSION_LIFETIME = 10800 # 3 hours in seconds
 
     def __init__(self):
         self.sessions = []
@@ -32,18 +35,18 @@ class SessionManager():
         has_sid = self.__request_has_sid__(request)
         s = self.__find_session__(request.session["sid"]) if has_sid else None
 
-        if not s:
-            s = self.__create_session__(request)
+        if not s or s.get("expiration_date") < int(time.time()):
+            s = self.__create_session__(request, int(time.time()) + self.SESSION_LIFETIME)
         
         return s
     
-    def __create_session__(self, request: Request) -> None:
+    def __create_session__(self, request: Request, expiration_date: int) -> None:
         sid = self.__generate_session_id__()
 
         while self.__find_session__(sid) is not None:
             sid = self.__generate_session_id__()
     
-        s = Session(sid)
+        s = Session(sid, expiration_date)
         self.sessions.append(s)
         request.session["sid"] = sid
         return s
