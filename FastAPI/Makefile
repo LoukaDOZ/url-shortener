@@ -19,5 +19,5 @@ rebuild: stop build start
 stop:
 	docker compose down
 
-volume-clean:
+db-clean:
 	sudo rm -rf ./db/data/
