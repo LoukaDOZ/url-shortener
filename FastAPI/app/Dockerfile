@@ -6,6 +6,7 @@ RUN pip install jinja2
 RUN pip install psycopg2-binary
 RUN pip install passlib
 RUN pip install python-multipart
+RUN pip install itsdangerous
 RUN pip install "uvicorn[standard]"
 
 RUN mkdir /app
