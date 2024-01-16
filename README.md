@@ -14,6 +14,7 @@ Each project can be easy launch through a `Makefile` and a `docker-compose.yml`.
 
 | Command            | Description                                                     |
 | ------------------ | --------------------------------------------------------------- |
+| `make build`       | Build Docker containers                                         |
 | `make start`       | Start Docker containers                                         |
 | `make start-build` | Rebuild Dockerfiles and start Docker containers                 |
 | `make restart`     | Restart Docker containers                                       |

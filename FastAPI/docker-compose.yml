@@ -12,10 +12,10 @@ services:
       DB_PASSWORD: "passwd"
       DB_DEFAULT_DB_NAME: "url_shortener"
     depends_on:
-      - postgres
+      - db
     restart: always
   
-  postgres:
+  db:
     container_name: psqldb
     image: postgres:latest
     environment:
