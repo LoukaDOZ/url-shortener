@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block body %}
+    {{ super() }}
+
+    <div class="container mt-1">
+        {% if shortening is eq True %}
+            <form id="form-guest" class="mb-2" action="/shorten?guest=true" method="post">
+                <a href="/" class="fs-6 me-3 link-underline link-underline-opacity-0 link-underline-opacity-100-hover">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+                    </svg>
+                    Cancel
+                </a>
+                
+                <a href="#" class="fs-6 link-underline link-underline-opacity-0 link-underline-opacity-100-hover" onclick="continueAsGuest()">
+                    Continue as guest
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8"/>
+                    </svg>
+                </a>
+            </form>
+        {% endif %}
+
+        <h1>My account</h1>
+
+        <div class="nav nav-tabs mb-4" id="nav-tab" role="tablist">
+            <button class="nav-link {% if tab is eq 'login' or tab is not defined %} active {% endif %} text-black" id="nav-login-tab" data-bs-toggle="tab" data-bs-target="#login-form" type="button" role="tab" aria-controls="nav-login" aria-selected="{% if tab is eq 'login' or tab is not defined %} true {% else %} false {% endif %}">Login</button>
+            <button class="nav-link {% if tab is eq 'register' %} active {% endif %} text-black" id="nav-register-tab" data-bs-toggle="tab" data-bs-target="#register-form" type="button" role="tab" aria-controls="nav-register" aria-selected="{% if tab is eq 'register' %} true {% else %} false {% endif %}">Register</button>
+        </div>
+
+        <div class="tab-content">
+            <div id="login-form" class="tab-pane fade {% if tab is eq 'login' or tab is not defined %} show active {% endif %}" id="nav-login" role="tabpanel" aria-labelledby="nav-login-tab" tabindex="0">        
+                <form action="{% if shortening is eq True %} /login?shortening=true {% else %} /login {% endif %}" method="post" onsubmit="onLogin()">
+                    <div class="mb-3 position-relative">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" id="username" name="username" class="form-control" value="{{ login_username }}" required="required"/>
+                        <div id="input-error" class="form-text text-danger">{{ login_username_error }}</div>
+                    </div>
+
+                    <div class="mb-3 position-relative">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" id="password" name="password" class="form-control" required="required"/>
+                        <div id="input-error" class="form-text text-danger">{{ login_password_error }}</div>
+                    </div>
+
+                    <button id="login" type="submit" class="btn btn-primary">
+                        <span id="login-button-text">Login !</span>
+                        <span id="login-button-spinner" style="display: none;">
+                            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                            <span role="status">Loading...</span>
+                        </span>
+                    </button>
+                </form>
+            </div>
+
+            <div id="register-form" class="tab-pane fade {% if tab is eq 'register' %} show active {% endif %}" id="nav-register" role="tabpanel" aria-labelledby="nav-register-tab" tabindex="0">
+                <form action="{% if shortening is eq True %} /register?shortening=true {% else %} /register {% endif %}" method="post" onsubmit="onRegister()">
+                    <div class="mb-3 position-relative">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" id="username" name="username" class="form-control" value="{{ register_username }}" required="required"/>
+                        <div id="input-error" class="form-text text-danger">{{ register_username_error }}</div>
+                    </div>
+
+                    <div class="mb-3 position-relative">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" id="password" name="password" class="form-control" required="required"/>
+                        <div id="input-error" class="form-text text-danger">{{ register_password_error }}</div>
+                    </div>
+
+                    <div class="mb-3 position-relative">
+                        <label for="confirm-password" class="form-label">Confirm password</label>
+                        <input type="password" id="confirm-password" name="confirm_password" class="form-control" required="required"/>
+                        <div id="input-error" class="form-text text-danger">{{ register_confirm_password_error }}</div>
+                    </div>
+
+                    <button id="register" type="submit" class="btn btn-primary">
+                        <span id="register-button-text">Register !</span>
+                        <span id="register-button-spinner" style="display: none;">
+                            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                            <span role="status">Loading...</span>
+                        </span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        function continueAsGuest(e) {
+            document.getElementById("form-guest").submit();
+        }
+
+        function onLogin(e) {
+            document.getElementById("login-button-text").style.display = "none";
+            document.getElementById("login-button-spinner").style.display = "block";
+        }
+
+        function onRegister(e) {
+            document.getElementById("register-button-text").style.display = "none";
+            document.getElementById("register-button-spinner").style.display = "block";
+        }
+    </script>
+{% endblock %}

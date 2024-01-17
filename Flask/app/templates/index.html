@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block body %}
+    {{ super() }}
+
+    <div class="container mt-1">
+        <h1>Shorten my URL</h1>
+    
+        <form action="/shorten" method="post" onsubmit="onSubmit()">
+            <div class="mb-3 position-relative">
+                <label for="url" class="form-label">Enter your URL</label>
+                <input type="text" id="url" name="url" class="form-control" value="{{ url }}" placeholder="https://example.com" required="required"/>
+                <div id="input-error" class="form-text text-danger">{{ input_error }}</div>
+            </div>
+
+            <button id="submit" type="submit" class="btn btn-primary">
+                <span id="submit-button-text">Shorten this !</span>
+                <span id="submit-button-spinner" style="display: none;">
+                    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    <span role="status">Loading...</span>
+                </span>
+            </button>
+        </form>
+    </div>
+    <script>
+        function onSubmit(e) {
+            document.getElementById("submit-button-text").style.display = "none";
+            document.getElementById("submit-button-spinner").style.display = "block";
+        }
+    </script>
+{% endblock %}

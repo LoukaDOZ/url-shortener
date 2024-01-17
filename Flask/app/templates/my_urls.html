@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block body %}
+    {{ super() }}
+
+    <div class="container mt-1">
+        <h1>My shortened URLs</h1>
+
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">URL</th>
+                    <th scope="col">Shortened</th>
+                    <th scope="col">Expiration date</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+                <tbody>
+                    {% for row in urls %}
+                        <tr>
+                            <td class="text-break" scope="row">
+                                <a href="{{ row.target_url }}" class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover">
+                                    {{ row.target_url }}
+                                </a>
+                            </td>
+                            <td style="min-width: 190px">
+                                <a href="{{ row.shortened_url }}"  class="link-underline link-underline-opacity-0 link-underline-opacity-100-hover">
+                                    {{ row.shortened_url }}
+                                </a>
+                            </td>
+                            <td style="min-width: 200px">
+                                {{ row.expiration_date }}
+                            </td>
+                            <td style="min-width: 90px">
+                                <a id="copy-{{ loop.index }}" href="#" class="btn btn-outline-primary p-2" onclick="copyURL('{{ loop.index }}', '{{ row.shortened_url }}')"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="bottom"
+                                    data-bs-title="Copied !"
+                                    data-bs-trigger="manual">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
+                                    </svg>
+                                    Copy
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script>
+        let timeoutIDs = {};
+
+        function copyURL(id, url) {
+            navigator.clipboard.writeText(url);
+
+            const tooltip = bootstrap.Tooltip.getInstance(document.getElementById("copy-" + id));
+            
+            if(timeoutIDs[id]) {
+                console.log("clear", timeoutIDs[id]);
+                clearTimeout(timeoutIDs[id]);
+            } else {
+                console.log("show", timeoutIDs[id]);
+                tooltip.show();
+            }
+
+            timeoutIDs[id] = setTimeout(() => {
+                console.log("hide", timeoutIDs[id]);
+                tooltip.hide();
+                timeoutIDs[id] = null;
+            }, 4000);
+        }
+    </script>
+{% endblock %}

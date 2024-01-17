@@ -1,0 +1,2 @@
+flask[async]
+uvicron[standard]
