@@ -1,4 +1,4 @@
-from flask import Flask, request, session
+from flask import Flask, request, session, abort
 
 from modules.session import session_manager, Session
 
@@ -14,7 +14,10 @@ def get_session() -> Session:
     return session_manager.get_session(session)
 
 def get_form(key: str, placeholder: object) -> object:
-    return request.form.get(key)
+    return request.form.get(key) if key in request.form else placeholder
+
+def get_args(key: str, placeholder: object) -> object:
+    return request.args.get(key) if key in request.args else placeholder
 
 # Routes
 @app.route("/", methods=["GET"])
@@ -28,23 +31,31 @@ async def redirect(url_id: str):
 @app.route("/shorten", methods=["GET", "POST"])
 async def shorten():
     if request.method == "POST":
-        url = request.form.get("url")
+        url = get_form("url", "")
+        guest = bool(get_args("guest", False))
         return await url_routes.shorten(get_session(), request.base_url, url, guest)
+    
     return await url_routes.shorten_page(get_session())
 
 @app.route("/login", methods=["GET", "POST"])
 async def login():
+    shortening = bool(get_args("shortening", False))
+
     if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
+        username = get_form("username", "")
+        password = get_form("password", "")
         return await login_routes.login(get_session(), username, password, shortening)
+    
+    tab = get_args("tab", "login")
     return await login_routes.login_page(get_session(), tab, shortening)
 
 @app.post("/register")
 async def register():
-    username = request.form.get("username")
-    password = request.form.get("password")
-    confirm_password = request.form.get("confirm_password")
+    username = get_form("username", "")
+    password = get_form("password", "")
+    confirm_password = get_form("confirm_password", "")
+    shortening = bool(get_args("shortening", False))
+
     return await login_routes.register(
         get_session(), username, password, confirm_password, shortening
     )
@@ -63,4 +74,4 @@ async def not_found(unknown_path: str):
 
 @app.errorhandler(404)
 async def page_not_found(error):
-    return default_routes.not_found(get_session()), 404
+    return await default_routes.not_found(get_session()), 404

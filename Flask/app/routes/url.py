@@ -1,3 +1,5 @@
+from flask import abort
+
 from datetime import datetime
 import time
 import random
@@ -40,7 +42,7 @@ def date_to_str(date: int):
     return datetime.fromtimestamp(date).strftime("%d/%m/%Y %H:%M")
 
 def create_url(base_url: str, url_id: str) -> str:
-    return f"{base_url}r/{url_id}"
+    return f"{base_url}/r/{url_id}"
 
 def remove_expired_urls():
     db.delete_expired_urls(int(time.time()))
@@ -53,11 +55,14 @@ async def redirect_to_target_url(session: Session, url_id: str):
     url = db.get_target_url(url_id)
 
     if not url:
-        return await default_routes.not_found(session)
-    return await redirect(url)
+        abort(404)
+    return redirect(url)
 
 async def shorten_page(session: Session):
-    return render(session, "index.html")
+    return render(
+        session = session,
+        page = "index.html"
+    )
 
 async def shorten(session: Session, base_url: str, url: str, guest: bool):  
     missing_url = False
@@ -68,7 +73,7 @@ async def shorten(session: Session, base_url: str, url: str, guest: bool):
         url = url.strip()
         failed_url_size = not check_url_size(url)
         failed_url_regex = not check_url_regex(url)
-    elif not user_session.has("pending_url_id"):
+    elif not session.has("pending_url_id"):
         missing_url = True
 
     if failed_url_size or failed_url_regex or missing_url:
@@ -81,7 +86,11 @@ async def shorten(session: Session, base_url: str, url: str, guest: bool):
         else:
             context["input_error"] = "URL is too long"
 
-        return render(session, "index.html", context)
+        return render(
+            session = session,
+            page = "index.html",
+            context = context
+        )
 
     url_id = None
     username = None
@@ -102,12 +111,14 @@ async def shorten(session: Session, base_url: str, url: str, guest: bool):
     elif not guest:
         session.set("pending_url_id", url_id)
         session.set("pending_target_url", url)
-        return await redirect(f"/login?shortening=true", True)
+        return redirect(f"/login?shortening=true", True)
 
     expiration_date = get_url_expiration_date()
     db.insert_url(url, url_id, expiration_date, username)
-    return render(session, "shortened.html",
-        {
+    return render(
+        session = session,
+        page = "shortened.html",
+        context = {
             "shortened_url": create_url(base_url, url_id),
             "expiration_date": date_to_str(expiration_date)
         }
@@ -115,7 +126,7 @@ async def shorten(session: Session, base_url: str, url: str, guest: bool):
 
 async def my_urls_page(session: Session, base_url: str):
     if not session.has("is_connected"):
-        return await redirect("/login")
+        return redirect("/login")
 
     query_urls = db.get_user_urls(session.get("username"))
     urls = []
@@ -128,4 +139,7 @@ async def my_urls_page(session: Session, base_url: str):
                 "expiration_date": date_to_str(u[2])
             })
 
-    return render(session, "my_urls.html", { "urls": urls })
+    return render(
+        session = session,
+        page = "my_urls.html",
+        context = { "urls": urls })

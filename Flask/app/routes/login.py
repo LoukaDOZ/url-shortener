@@ -42,8 +42,10 @@ def compare_password(plain_password: str, hashed_password: str) -> str:
 async def login_page(session: Session, tab: str, shortening: bool):
     session.delete("is_connected")
 
-    return render(session, "login.html",
-        {
+    return render(
+        session = session,
+        page = "login.html",
+        context = {
             "tab": tab,
             "shortening": shortening
         }
@@ -60,8 +62,10 @@ async def login(session: Session, username: str, password: str, shortening: bool
             or not check_password_regex(password)
             or not hashed_password
             or not compare_password(password, hashed_password)):
-        return render(session, "login.html",
-            {
+        return render(
+            session = session,
+            page = "login.html",
+            context = {
                 "tab": "login",
                 "shortening": shortening,
                 "login_username": username,
@@ -73,8 +77,8 @@ async def login(session: Session, username: str, password: str, shortening: bool
     session.set("username", username)
 
     if shortening:
-        return await redirect("/shorten")
-    return await redirect("/", True)
+        return redirect("/shorten")
+    return redirect("/", True)
 
 async def register(
         session: Session,
@@ -108,8 +112,10 @@ async def register(
         error_message = "Confirmation password does not match"
 
     if error_name:
-        return render(session, "login.html",
-            {
+        return render(
+            session = session,
+            page = "login.html",
+            context = {
                 "tab": "register",
                 "shortening": shortening,
                 "register_username": username,
@@ -122,9 +128,9 @@ async def register(
     session.set("username", username)
 
     if shortening:
-        return await redirect("/shorten")
-    return await redirect("/", True)
+        return redirect("/shorten")
+    return redirect("/", True)
 
 async def logout(session: Session):
     session.delete("is_connected")
-    return await redirect("/", True)
+    return redirect("/", True)
