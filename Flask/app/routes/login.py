@@ -1,3 +1,4 @@
+from flask import Response
 from passlib.context import CryptContext
 
 import re
@@ -39,7 +40,7 @@ def compare_password(plain_password: str, hashed_password: str) -> str:
     return pwd_context.verify(plain_password, hashed_password)
 
 # Routes
-async def login_page(session: Session, tab: str, shortening: bool):
+async def login_page(session: Session, tab: str, shortening: bool) -> Response:
     session.delete("is_connected")
 
     return render(
@@ -51,7 +52,7 @@ async def login_page(session: Session, tab: str, shortening: bool):
         }
     )
 
-async def login(session: Session, username: str, password: str, shortening: bool):
+async def login(session: Session, username: str, password: str, shortening: bool) -> Response:
     username = username.strip()
     password = password.strip()
     hashed_password = db.get_user_password(username)
@@ -85,7 +86,7 @@ async def register(
         username: str,
         password: str,
         confirm_password: str,
-        shortening: bool):
+        shortening: bool) -> Response:
     username = username.strip()
     password = password.strip()
     confirm_password = confirm_password.strip()
@@ -131,6 +132,6 @@ async def register(
         return redirect("/shorten")
     return redirect("/", True)
 
-async def logout(session: Session):
+async def logout(session: Session) -> Response:
     session.delete("is_connected")
     return redirect("/", True)

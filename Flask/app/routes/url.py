@@ -1,4 +1,4 @@
-from flask import abort
+from flask import abort, Response
 
 from datetime import datetime
 import time
@@ -48,7 +48,7 @@ def remove_expired_urls():
     db.delete_expired_urls(int(time.time()))
 
 # Routes
-async def redirect_to_target_url(session: Session, url_id: str):
+async def redirect_to_target_url(session: Session, url_id: str) -> Response:
     url_id = url_id.strip()
 
     remove_expired_urls()
@@ -58,13 +58,13 @@ async def redirect_to_target_url(session: Session, url_id: str):
         abort(404)
     return redirect(url)
 
-async def shorten_page(session: Session):
+async def shorten_page(session: Session) -> Response:
     return render(
         session = session,
         page = "index.html"
     )
 
-async def shorten(session: Session, base_url: str, url: str, guest: bool):  
+async def shorten(session: Session, base_url: str, url: str, guest: bool) -> Response:
     missing_url = False
     failed_url_size = False
     failed_url_regex = False
@@ -124,7 +124,7 @@ async def shorten(session: Session, base_url: str, url: str, guest: bool):
         }
     )
 
-async def my_urls_page(session: Session, base_url: str):
+async def my_urls_page(session: Session, base_url: str) -> Response:
     if not session.has("is_connected"):
         return redirect("/login")
 

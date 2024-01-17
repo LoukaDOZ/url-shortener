@@ -1,4 +1,4 @@
-from flask import Flask, request, session, abort
+from flask import Flask, request, session, abort, Response
 
 from modules.session import session_manager, Session
 
@@ -21,15 +21,15 @@ def get_args(key: str, placeholder: object) -> object:
 
 # Routes
 @app.route("/", methods=["GET"])
-async def root():
+async def root() -> Response:
     return await default_routes.root(get_session())
 
 @app.route("/r/{url_id}", methods=["GET"])
-async def redirect(url_id: str):
+async def redirect(url_id: str) -> Response:
     return await url_routes.redirect_to_target_url(get_session(), url_id)
 
 @app.route("/shorten", methods=["GET", "POST"])
-async def shorten():
+async def shorten() -> Response:
     if request.method == "POST":
         url = get_form("url", "")
         guest = bool(get_args("guest", False))
@@ -38,7 +38,7 @@ async def shorten():
     return await url_routes.shorten_page(get_session())
 
 @app.route("/login", methods=["GET", "POST"])
-async def login():
+async def login() -> Response:
     shortening = bool(get_args("shortening", False))
 
     if request.method == "POST":
@@ -50,7 +50,7 @@ async def login():
     return await login_routes.login_page(get_session(), tab, shortening)
 
 @app.post("/register")
-async def register():
+async def register() -> Response:
     username = get_form("username", "")
     password = get_form("password", "")
     confirm_password = get_form("confirm_password", "")
@@ -61,17 +61,17 @@ async def register():
     )
 
 @app.get("/logout")
-async def logout():
+async def logout() -> Response:
     return await login_routes.logout(get_session())
 
 @app.get("/my-urls")
-async def my_urls():
+async def my_urls() -> Response:
     return await url_routes.my_urls_page(get_session(), request.base_url)
 
 @app.route("/<path:unknown_path>")
-async def not_found(unknown_path: str):
+async def not_found(unknown_path: str) -> Response:
     abort(404)
 
 @app.errorhandler(404)
-async def page_not_found(error):
+async def page_not_found(error) -> Response:
     return await default_routes.not_found(get_session()), 404
