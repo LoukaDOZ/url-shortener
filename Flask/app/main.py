@@ -8,6 +8,7 @@ import routes.url as url_routes
 
 # App init
 app = Flask(__name__)
+app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
 def get_session() -> Session:
     return session_manager.get_session(session)

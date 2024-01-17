@@ -54,7 +54,7 @@ async def redirect_to_target_url(session: Session, url_id: str):
 
     if not url:
         return await default_routes.not_found(session)
-    return redirect(url)
+    return await redirect(url)
 
 async def shorten_page(session: Session):
     return render(session, "index.html")
@@ -102,14 +102,12 @@ async def shorten(session: Session, base_url: str, url: str, guest: bool):
     elif not guest:
         session.set("pending_url_id", url_id)
         session.set("pending_target_url", url)
-        return redirect(f"/login?shortening=true", True)
+        return await redirect(f"/login?shortening=true", True)
 
     expiration_date = get_url_expiration_date()
     db.insert_url(url, url_id, expiration_date, username)
-    return render(
-        request = request,
-        page = "shortened.html",
-        context = {
+    return render(session, "shortened.html",
+        {
             "shortened_url": create_url(base_url, url_id),
             "expiration_date": date_to_str(expiration_date)
         }
@@ -117,7 +115,7 @@ async def shorten(session: Session, base_url: str, url: str, guest: bool):
 
 async def my_urls_page(session: Session, base_url: str):
     if not session.has("is_connected"):
-        return redirect("/login")
+        return await redirect("/login")
 
     query_urls = db.get_user_urls(session.get("username"))
     urls = []

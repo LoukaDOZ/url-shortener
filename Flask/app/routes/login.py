@@ -73,8 +73,8 @@ async def login(session: Session, username: str, password: str, shortening: bool
     session.set("username", username)
 
     if shortening:
-        return redirect("/shorten")
-    return redirect("/", True)
+        return await redirect("/shorten")
+    return await redirect("/", True)
 
 async def register(
         session: Session,
@@ -122,9 +122,9 @@ async def register(
     session.set("username", username)
 
     if shortening:
-        return redirect("/shorten")
-    return redirect("/", True)
+        return await redirect("/shorten")
+    return await redirect("/", True)
 
 async def logout(session: Session):
     session.delete("is_connected")
-    return redirect("/", True)
+    return await redirect("/", True)
