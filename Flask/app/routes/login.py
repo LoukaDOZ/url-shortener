@@ -6,7 +6,7 @@ import re
 from modules.session import session_manager, Session
 
 from modules.responses import render, redirect
-from modules.postgres import query as db
+from modules.postgres import Query as db
 from modules.session import session_manager as session
 
 # Init Passlib hash
@@ -55,7 +55,7 @@ async def login_page(session: Session, tab: str, shortening: bool) -> Response:
 async def login(session: Session, username: str, password: str, shortening: bool) -> Response:
     username = username.strip()
     password = password.strip()
-    hashed_password = db.get_user_password(username)
+    hashed_password = db.query.get_user_password(username)
 
     if (not check_username_size(username)
             or not check_username_regex(username)
@@ -99,7 +99,7 @@ async def register(
     elif not check_username_regex(username):
         error_name = "register_username_error"
         error_message = "Username contains invalid characters"
-    elif db.get_user_password(username):
+    elif db.query.get_user_password(username):
         error_name = "register_username_error"
         error_message = "Username already exists"
     elif not check_password_size(password):
@@ -124,7 +124,7 @@ async def register(
             }
         )
     
-    db.insert_user(username, hash_password(password))
+    db.query.insert_user(username, hash_password(password))
     session.set("is_connected", True)
     session.set("username", username)
 

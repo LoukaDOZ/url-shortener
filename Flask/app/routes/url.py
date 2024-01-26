@@ -9,7 +9,7 @@ import routes.default as default_routes
 import modules.session as Session
 
 from modules.responses import render, redirect
-from modules.postgres import query as db
+from modules.postgres import Query as db
 from modules.session import session_manager as session
 
 # Utils
@@ -42,17 +42,17 @@ def date_to_str(date: int):
     return datetime.fromtimestamp(date).strftime("%d/%m/%Y %H:%M")
 
 def create_url(base_url: str, url_id: str) -> str:
-    return f"{base_url}/r/{url_id}"
+    return f"{base_url}r/{url_id}"
 
 def remove_expired_urls():
-    db.delete_expired_urls(int(time.time()))
+    db.query.delete_expired_urls(int(time.time()))
 
 # Routes
 async def redirect_to_target_url(session: Session, url_id: str) -> Response:
     url_id = url_id.strip()
 
     remove_expired_urls()
-    url = db.get_target_url(url_id)
+    url = db.query.get_target_url(url_id)
 
     if not url:
         abort(404)
@@ -98,7 +98,7 @@ async def shorten(session: Session, base_url: str, url: str, guest: bool) -> Res
     if url:
         while True:
             url_id = generate_url_id()
-            if not db.get_target_url(url_id):
+            if not db.query.get_target_url(url_id):
                 break
     else:
         url_id = session.get("pending_url_id")
@@ -114,7 +114,7 @@ async def shorten(session: Session, base_url: str, url: str, guest: bool) -> Res
         return redirect(f"/login?shortening=true", True)
 
     expiration_date = get_url_expiration_date()
-    db.insert_url(url, url_id, expiration_date, username)
+    db.query.insert_url(url, url_id, expiration_date, username)
     return render(
         session = session,
         page = "shortened.html",
@@ -128,7 +128,7 @@ async def my_urls_page(session: Session, base_url: str) -> Response:
     if not session.has("is_connected"):
         return redirect("/login")
 
-    query_urls = db.get_user_urls(session.get("username"))
+    query_urls = db.query.get_user_urls(session.get("username"))
     urls = []
 
     if query_urls:

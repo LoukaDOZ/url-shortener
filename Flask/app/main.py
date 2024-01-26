@@ -1,6 +1,7 @@
 from flask import Flask, request, session, abort, Response
 
 from modules.session import session_manager, Session
+import modules.postgres as db
 
 import routes.default as default_routes
 import routes.login as login_routes
@@ -9,6 +10,9 @@ import routes.url as url_routes
 # App init
 app = Flask(__name__)
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+
+# DB init
+db.init(app)
 
 def get_session() -> Session:
     return session_manager.get_session(session)
@@ -24,7 +28,7 @@ def get_args(key: str, placeholder: object) -> object:
 async def root() -> Response:
     return await default_routes.root(get_session())
 
-@app.route("/r/{url_id}", methods=["GET"])
+@app.route("/r/<string:url_id>", methods=["GET"])
 async def redirect(url_id: str) -> Response:
     return await url_routes.redirect_to_target_url(get_session(), url_id)
 
@@ -33,13 +37,14 @@ async def shorten() -> Response:
     if request.method == "POST":
         url = get_form("url", "")
         guest = bool(get_args("guest", False))
-        return await url_routes.shorten(get_session(), request.base_url, url, guest)
+        return await url_routes.shorten(get_session(), request.url_root, url, guest)
     
     return await url_routes.shorten_page(get_session())
 
 @app.route("/login", methods=["GET", "POST"])
 async def login() -> Response:
     shortening = bool(get_args("shortening", False))
+    print(shortening)
 
     if request.method == "POST":
         username = get_form("username", "")
@@ -66,7 +71,7 @@ async def logout() -> Response:
 
 @app.get("/my-urls")
 async def my_urls() -> Response:
-    return await url_routes.my_urls_page(get_session(), request.base_url)
+    return await url_routes.my_urls_page(get_session(), request.url_root)
 
 @app.route("/<path:unknown_path>")
 async def not_found(unknown_path: str) -> Response:
