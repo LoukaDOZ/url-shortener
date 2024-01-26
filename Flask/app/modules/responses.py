@@ -9,5 +9,5 @@ def render(session: Session, page: str, context: dict = {}) -> Response:
 
 def redirect(url: str, override_method: bool = False) -> Response:
     if override_method:
-        return fredirect(url)
-    return fredirect(url)
+        return fredirect(url, code=302)
+    return fredirect(url, code=307)
