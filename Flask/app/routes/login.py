@@ -3,11 +3,9 @@ from passlib.context import CryptContext
 
 import re
 
-from modules.session import session_manager, Session
-
 from modules.responses import render, redirect
 from modules.postgres import Query as db
-from modules.session import session_manager as session
+from modules.session import session
 
 # Init Passlib hash
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -40,11 +38,10 @@ def compare_password(plain_password: str, hashed_password: str) -> str:
     return pwd_context.verify(plain_password, hashed_password)
 
 # Routes
-async def login_page(session: Session, tab: str, shortening: bool) -> Response:
+async def login_page(tab: str, shortening: bool) -> Response:
     session.delete("is_connected")
 
     return render(
-        session = session,
         page = "login.html",
         context = {
             "tab": tab,
@@ -52,7 +49,7 @@ async def login_page(session: Session, tab: str, shortening: bool) -> Response:
         }
     )
 
-async def login(session: Session, username: str, password: str, shortening: bool) -> Response:
+async def login(username: str, password: str, shortening: bool) -> Response:
     username = username.strip()
     password = password.strip()
     hashed_password = db.query.get_user_password(username)
@@ -64,7 +61,6 @@ async def login(session: Session, username: str, password: str, shortening: bool
             or not hashed_password
             or not compare_password(password, hashed_password)):
         return render(
-            session = session,
             page = "login.html",
             context = {
                 "tab": "login",
@@ -82,7 +78,6 @@ async def login(session: Session, username: str, password: str, shortening: bool
     return redirect("/", True)
 
 async def register(
-        session: Session,
         username: str,
         password: str,
         confirm_password: str,
@@ -114,7 +109,6 @@ async def register(
 
     if error_name:
         return render(
-            session = session,
             page = "login.html",
             context = {
                 "tab": "register",
@@ -132,6 +126,6 @@ async def register(
         return redirect("/shorten")
     return redirect("/", True)
 
-async def logout(session: Session) -> Response:
+async def logout() -> Response:
     session.delete("is_connected")
     return redirect("/", True)

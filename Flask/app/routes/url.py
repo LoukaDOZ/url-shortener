@@ -6,11 +6,10 @@ import random
 import re
 
 import routes.default as default_routes
-import modules.session as Session
 
 from modules.responses import render, redirect
 from modules.postgres import Query as db
-from modules.session import session_manager as session
+from modules.session import session
 
 # Utils
 URL_LIFETIME = 604800 # 7 days in seconds
@@ -48,7 +47,7 @@ def remove_expired_urls():
     db.query.delete_expired_urls(int(time.time()))
 
 # Routes
-async def redirect_to_target_url(session: Session, url_id: str) -> Response:
+async def redirect_to_target_url(url_id: str) -> Response:
     url_id = url_id.strip()
 
     remove_expired_urls()
@@ -58,13 +57,11 @@ async def redirect_to_target_url(session: Session, url_id: str) -> Response:
         abort(404)
     return redirect(url)
 
-async def shorten_page(session: Session) -> Response:
-    return render(
-        session = session,
-        page = "index.html"
-    )
+from flask import session as fsession
+async def shorten_page() -> Response:
+    return render("index.html")
 
-async def shorten(session: Session, base_url: str, url: str, guest: bool) -> Response:
+async def shorten(base_url: str, url: str, guest: bool) -> Response:
     missing_url = False
     failed_url_size = False
     failed_url_regex = False
@@ -87,7 +84,6 @@ async def shorten(session: Session, base_url: str, url: str, guest: bool) -> Res
             context["input_error"] = "URL is too long"
 
         return render(
-            session = session,
             page = "index.html",
             context = context
         )
@@ -116,7 +112,6 @@ async def shorten(session: Session, base_url: str, url: str, guest: bool) -> Res
     expiration_date = get_url_expiration_date()
     db.query.insert_url(url, url_id, expiration_date, username)
     return render(
-        session = session,
         page = "shortened.html",
         context = {
             "shortened_url": create_url(base_url, url_id),
@@ -124,7 +119,7 @@ async def shorten(session: Session, base_url: str, url: str, guest: bool) -> Res
         }
     )
 
-async def my_urls_page(session: Session, base_url: str) -> Response:
+async def my_urls_page(base_url: str) -> Response:
     if not session.has("is_connected"):
         return redirect("/login")
 
@@ -140,6 +135,5 @@ async def my_urls_page(session: Session, base_url: str) -> Response:
             })
 
     return render(
-        session = session,
         page = "my_urls.html",
         context = { "urls": urls })

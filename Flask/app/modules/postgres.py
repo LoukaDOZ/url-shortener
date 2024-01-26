@@ -1,4 +1,3 @@
-from flask import Flask
 from flask.ctx import AppContext
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Integer, String, BigInteger, ForeignKey
@@ -83,23 +82,3 @@ class URL(Base):
     target = mapped_column("target_url", String(512), nullable=False)
     expiration = mapped_column("expiration_date", BigInteger, nullable=False)
     username = mapped_column(ForeignKey("users.username"), nullable=True)
-
-def init(app: Flask) -> None:
-    DB_HOST = os.getenv("DB_HOST", "localhost")
-    DB_PORT = int(os.getenv("DB_PORT", 5432))
-    DB_USER = os.getenv("DB_USER", "postgres")
-    DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
-    DB_DEFAULT_DB_NAME = os.getenv("DB_DEFAULT_DB_NAME", "url_shortener")
-
-    uri = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_DEFAULT_DB_NAME}"
-    app.config["SQLALCHEMY_DATABASE_URI"] = uri
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-    db = SQLAlchemy(model_class = Base)
-    db.init_app(app)
-
-    with app.app_context():
-        db.create_all()
-    
-    Query.query = DBConnection(db, app.app_context())
-    print("DB INITIALIZED")

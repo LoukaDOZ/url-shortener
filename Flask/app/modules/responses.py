@@ -1,9 +1,9 @@
 from flask import render_template, Response
 from flask import redirect as fredirect
 
-from modules.session import Session
+from modules.session import session
 
-def render(session: Session, page: str, context: dict = {}) -> Response:
+def render(page: str, context: dict = {}) -> Response:
     context["connected"] = bool(session.get("is_connected"))
     return render_template(page, **context)
 
