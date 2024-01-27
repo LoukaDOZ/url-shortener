@@ -31,7 +31,7 @@ app.config["SESSION_TYPE"] = "sqlalchemy"
 app.config["SESSION_SQLALCHEMY"] = db
 app.config["SESSION_SQLALCHEMY_TABLE"] = "session"
 app.config["SESSION_PERMANENT"] = True
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(seconds=10)
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=30)
 app.config["SESSION_AUTODELETE"] = True
 with app.app_context():
     session = Session(app)

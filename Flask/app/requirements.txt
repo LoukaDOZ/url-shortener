@@ -1,2 +1,6 @@
-flask[async]
-uvicron[standard]
+Flask[async]
+Flask-SQLAlchemy
+Flask-Session2
+psycopg2-binary
+python-dotenv
+passlib

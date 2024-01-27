@@ -1,13 +1,14 @@
-# URL Shortener x FastAPI
+# URL Shortener x Flask
 
-URL Shortener web app with FastAPI framework
+URL Shortener web app with Flask framework
 
 ### Tools and libraries
 
-| Use                  | Tool       |
-| -------------------- | ---------- |
-| Web server           | Uvicorn    |
-| Database             | PostgreSQL |
-| Database library     | Psycopg    |
-| HTML template engine | Jinja      |
-| Password hashing     | Passlib    |
+| Use                  | Tool                          |
+| -------------------- | ----------------------------- |
+| Web server           | Flask                         |
+| Database             | PostgreSQL                    |
+| Database library     | Flask-SQLAlchemy + Psycopg    |
+| Server-side sessions | Flask-Session2 + SQLAlchemy   |
+| HTML template engine | Jinja (Flask)                 |
+| Password hashing     | Passlib                       |
