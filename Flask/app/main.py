@@ -1,4 +1,4 @@
-from flask import Flask, request, abort, Response
+from flask import Flask, request, abort, Response, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 from datetime import timedelta
