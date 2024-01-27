@@ -10,5 +10,5 @@ URL Shortener web app with FastAPI framework
 | Database             | PostgreSQL                                                          |
 | Database library     | Psycopg                                                             |
 | Server-side sessions | FastAPI cookies for session ID + home made server-side data storing |
-| HTML template engine | Jinja                                                               |
+| HTML template engine | Jinja2                                                              |
 | Password hashing     | Passlib                                                             |
