@@ -39,7 +39,8 @@ def compare_password(plain_password: str, hashed_password: str) -> str:
 
 # Routes
 async def login_page(tab: str, shortening: bool) -> Response:
-    session.delete("is_connected")
+    if session.has("is_connected"):
+        session.delete("is_connected")
 
     return render(
         page = "login.html",
