@@ -1,0 +1,58 @@
+{% extends "url_shortener/base.html" %}
+{% block body %}
+    {{ super() }}
+
+    <div class="container">
+        <h1>Here you go</h1>
+
+        <div class="form">
+            <div class="mb-3">
+                <span class="form-label">Share this shortened URL with everyone :</span>
+                <a href="{{ shortened_url|default('') }}" class="btn btn-outline-primary form-control text-left">
+                    {{ shortened_url }}
+                </a>
+                <div class="form-text">
+                    This URL will expire on : {{ expiration_date|default('') }}
+                </div>
+            </div>
+        </div>
+
+        <a class="btn btn-primary" href="/">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+            </svg>
+            Back
+        </a>
+
+        <button id="copy-button" type="button" class="btn btn-primary" onclick="copyURL()"
+            data-bs-toggle="tooltip"
+            data-bs-placement="bottom"
+            data-bs-title="Copied !"
+            data-bs-trigger="manual">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
+            </svg>
+            Copy
+        </button>
+    </div>
+    <script>
+        let timeoutID = null;
+
+        function copyURL() {
+            navigator.clipboard.writeText("{{ shortened_url|default('') }}");
+
+            const tooltip = bootstrap.Tooltip.getInstance(document.getElementById("copy-button"));
+            
+            if(timeoutID) {
+                clearTimeout(timeoutID);
+            } else {
+                tooltip.show();
+            }
+
+            timeoutID = setTimeout(() => {
+                tooltip.hide();
+                timeoutID = null;
+            }, 4000);
+        }
+    </script>
+{% endblock %}

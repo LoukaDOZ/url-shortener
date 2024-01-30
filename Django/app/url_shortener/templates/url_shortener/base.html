@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>URL Shortener</title>
+        <link rel="icon" href="{{ static('images/logo.png') }}">
+        <link href="{{ static('bootstrap/css/bootstrap.min.css') }}" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        {% block header %}{% endblock %}
+    </head>
+    <body>
+        {% block body %}
+        <nav class="navbar justify-content-start bg-dark" data-bs-theme="dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">
+                    <img src="{{ static('images/logo.png') }}" alt="Logo" width="24" height="24" class="d-inline-block align-text-top">
+                    URL Shortener
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/shorten">Shorten</a>
+                        </li>
+                        {% if connected is defined and connected is eq True %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="/my-urls">My URLs</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/logout">Log out</a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="/login">Log in</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/login?tab=register">Register</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>             
+            </div>
+        </nav>
+
+        <div class="container mt-2">
+            {% if global_error is defined %}
+                <div class="alert alert-danger">
+                    {{ global_error }}
+                </div>
+            {% endif %}
+        </div>
+        {% endblock %}
+
+        <script src="{{ static('bootstrap/js/bootstrap.bundle.min.js') }}" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+        <script>
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+        </script>
+    </body>
+</html>
