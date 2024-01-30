@@ -1,14 +1,2 @@
-FastAPI/app/__pycache__/*
-FastAPI/app/modules/__pycache__/*
-FastAPI/app/routes/__pycache__/*
-FastAPI/db/data/*
-
-Flask/app/__pycache__/*
-Flask/app/modules/__pycache__/*
-Flask/app/routes/__pycache__/*
-Flask/db/data/*
-
-Django/app/__pycache__/*
-Django/app/modules/__pycache__/*
-Django/app/routes/__pycache__/*
-Django/db/data/*
+**/__pycache__
+**/db/data
