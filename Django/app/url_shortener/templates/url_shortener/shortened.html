@@ -9,7 +9,7 @@
             <div class="mb-3">
                 <span class="form-label">Share this shortened URL with everyone :</span>
                 <a href="{{ shortened_url|default('') }}" class="btn btn-outline-primary form-control text-left">
-                    {{ shortened_url }}
+                    {{ shortened_url|default('') }}
                 </a>
                 <div class="form-text">
                     This URL will expire on : {{ expiration_date|default('') }}

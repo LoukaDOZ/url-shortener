@@ -5,7 +5,9 @@
     <div class="container mt-1">
         <h1>Shorten my URL</h1>
     
-        <form action="/shorten" method="post" onsubmit="onSubmit()">
+        <form action="/shorten/" method="post" onsubmit="onSubmit()">
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+        
             <div class="mb-3 position-relative">
                 <label for="url" class="form-label">Enter your URL</label>
                 <input type="text" id="url" name="url" class="form-control" value="{{ url|default('') }}" placeholder="https://example.com" required="required"/>
