@@ -1,8 +1,8 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
-class User(models.Model):
+class User(AbstractUser):
     username = models.CharField(db_column="username", max_length=32, primary_key=True)
-    password = models.CharField(db_column="password", max_length=64)
 
     class Meta:
         db_table = "users"

@@ -30,7 +30,9 @@
 
         <div class="tab-content">
             <div id="login-form" class="tab-pane fade {% if tab is eq 'login' or tab is not defined %} show active {% endif %}" id="nav-login" role="tabpanel" aria-labelledby="nav-login-tab" tabindex="0">        
-                <form action="{% if shortening is eq True %} /login?shortening=true {% else %} /login {% endif %}" method="post" onsubmit="onLogin()">
+                <form action="{% if shortening is eq True %} /login/?shortening=true {% else %} /login/ {% endif %}" method="post" onsubmit="onLogin()">
+                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
                     <div class="mb-3 position-relative">
                         <label for="username" class="form-label">Username</label>
                         <input type="text" id="username" name="username" class="form-control" value="{{ login_username|default('') }}" required="required"/>
@@ -54,7 +56,9 @@
             </div>
 
             <div id="register-form" class="tab-pane fade {% if tab is eq 'register' %} show active {% endif %}" id="nav-register" role="tabpanel" aria-labelledby="nav-register-tab" tabindex="0">
-                <form action="{% if shortening is eq True %} /register?shortening=true {% else %} /register {% endif %}" method="post" onsubmit="onRegister()">
+                <form action="{% if shortening is eq True %} /register/?shortening=true {% else %} /register/ {% endif %}" method="post" onsubmit="onRegister()">
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+            
                     <div class="mb-3 position-relative">
                         <label for="username" class="form-label">Username</label>
                         <input type="text" id="username" name="username" class="form-control" value="{{ register_username|default('') }}" required="required"/>
