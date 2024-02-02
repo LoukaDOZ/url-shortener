@@ -94,6 +94,11 @@ class RedirectToTargetView(generic.TemplateView):
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return render_404(self.request)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["connected"] = self.request.user.is_authenticated
+        return context
     
     def get(self, request, url_id):
         query = URL.objects.filter(_id=url_id)
@@ -138,15 +143,46 @@ class NotFoundView(generic.base.TemplateView):
         context["connected"] = self.request.user.is_authenticated
         return context
 
-# Routes
-def redirect_to_target_url(request, url_id):
-    query = URL.objects.filter(_id=url_id)
+class ShortenView(generic.edit.FormView):
+    template_name = template("index.html")
+    form_class = ShortenForm
+    success_url = "/shorten/"
+    http_method_names = ["get", "post"]
 
-    if(len(query) == 0):
+    def http_method_not_allowed(request, *args, **kwargs):
         return render_404(self.request)
 
-    return redirect(query[0].target, permanent=True)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["connected"] = self.request.user.is_authenticated
+        return context
+    
+    def form_valid(self, form):
+        url_id = get_url_id()
+        target_url = form.cleaned_data["url"]
+        expiration = get_url_expiration()
+        username = None
 
+        url = URL(
+            _id = url_id,
+            target = target_url,
+            expiration = expiration,
+            username = username
+        )
+        url.save()
+
+        return render_template(self.request, "shortened.html", {
+            "shortened_url": make_shortened_url(self.request, url._id),
+            "expiration_date": date_to_str(url.expiration)
+        })
+    
+    def form_invalid(self, form):
+        return render_template(self.request, "index.html", {
+            "url": get_form_data(form, "url", ""),
+            "input_error": get_error_message(form, "url")
+        })
+
+# Routes
 def shorten(request):
     guest = bool(get_query_param(request, "guest", False))
 
@@ -211,6 +247,13 @@ def log_in(request):
             if user is not None:
                 login(request, user)
                 return redirect("/shorten/", permanent=(not shortening))
+            else:
+                return render_template(request, "login.html", {
+                    "tab": "login",
+                    "shortening": shortening,
+                    "login_username": get_form_data(form, "username", ""),
+                    "global_error": "Invalid credentials"
+                })
         else:
             username_err = get_error(form, "username")
             password_err = get_error(form, "password")
