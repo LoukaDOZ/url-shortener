@@ -116,41 +116,6 @@ class RedirectToTargetView(generic.TemplateView):
 
         return redirect(query[0].target, permanent=True)
 
-class UserURLView(LoginRequiredMixin, generic.ListView):
-    login_url = "/login/"
-    redirect_field_name = "next"
-
-    template_name = template("my_urls.html")
-    context_object_name = "urls"
-    http_method_names = ["get"]
-
-    def http_method_not_allowed(request, *args, **kwargs):
-        return render_404(request)
-    
-    def get_queryset(self):
-        return URL.objects.filter(username=self.request.user.username)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        connected_context(self.request, context)
-
-        for url in context["urls"]:
-            url.shortened_url = make_shortened_url(self.request, url._id)
-            url.expiration_date = date_to_str(url.expiration)
-        return context
-
-class NotFoundView(generic.base.TemplateView):
-    template_name = template("not_found.html")
-    http_method_names = ["get"]
-
-    def http_method_not_allowed(request, *args, **kwargs):
-        return render_404(request)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        connected_context(self.request, context)
-        return context
-
 class ShortenView(generic.edit.FormView):
     template_name = template("index.html")
     form_class = ShortenForm
@@ -202,16 +167,24 @@ class LoginView(generic.edit.FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         connected_context(self.request, context)
+        context["tab"] = self.__get_query_param__("tab", "login")
+        context["login_url"] = self.__build_form_url__("/login/")
+        context["register_url"] = self.__build_form_url__("/register/")
         return context
     
-    def form_valid(self, form):
+    def form_valid(self, form, *args, **kwargs):
         username = get_form_data(form, "username", "")
         raw_password = get_form_data(form, "password", "")
+        next_url = self.__get_query_param__("next", None)
         shortening = False
 
         user = authenticate(self.request, username=username, password=raw_password)
         if user is not None:
             login(self.request, user)
+
+            if next_url:
+                return redirect(next_url, permanent=True)
+
             return redirect("/shorten/", permanent=(not shortening))
         else:
             return self.form_invalid(form)
@@ -232,6 +205,14 @@ class LoginView(generic.edit.FormView):
             context["global_error"] = "Invalid credentials"
 
         return render_template(self.request, "login.html", context)
+    
+    def __get_query_param__(self, key: str, placeholder: object):
+        return self.request.GET.get(key, placeholder)
+    
+    def __build_form_url__(self, path: str):
+        next_url = self.__get_query_param__('next', None)
+        next_param = f"next={next_url}" if next_url else ""
+        return f"{path}?{next_param}"
 
 class RegisterView(generic.edit.FormView):
     template_name = ""
@@ -245,12 +226,15 @@ class RegisterView(generic.edit.FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         connected_context(self.request, context)
+        context["login_url"] = self.__build_form_url__("/login/")
+        context["register_url"] = self.__build_form_url__("/register/")
         return context
     
     def form_valid(self, form):
         username = get_form_data(form, "username", "")
         raw_password = get_form_data(form, "password", "")
         hashed_password = make_password(raw_password)
+        next_url = self.__get_query_param__("next", None)
         
         if len(User.objects.filter(username = username)) != 0:
             return self.form_invalid(form, True)
@@ -262,6 +246,10 @@ class RegisterView(generic.edit.FormView):
 
         user.save()
         login(self.request, user)
+        
+        if next_url:
+            return redirect(next_url, permanent=True)
+
         return redirect("/shorten/", permanent=True)
     
     def form_invalid(self, form, user_exists_err: bool = False):
@@ -278,6 +266,14 @@ class RegisterView(generic.edit.FormView):
             context["register_confirm_password_error"] = get_error_message(form, "confirm_password")
 
         return render_template(self.request, "login.html", context)
+    
+    def __get_query_param__(self, key: str, placeholder: object):
+        return self.request.GET.get(key, placeholder)
+    
+    def __build_form_url__(self, path: str):
+        next_url = self.__get_query_param__('next', None)
+        next_param = f"next={next_url}" if next_url else ""
+        return f"{path}?{next_param}"
 
 class LogoutView(generic.base.RedirectView):
     permanent = True
@@ -291,6 +287,41 @@ class LogoutView(generic.base.RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         logout(self.request)
         return super().get_redirect_url(*args, **kwargs)
+
+class UserURLView(LoginRequiredMixin, generic.ListView):
+    login_url = "/login/"
+    redirect_field_name = "next"
+
+    template_name = template("my_urls.html")
+    context_object_name = "urls"
+    http_method_names = ["get"]
+
+    def http_method_not_allowed(request, *args, **kwargs):
+        return render_404(request)
+    
+    def get_queryset(self):
+        return URL.objects.filter(username=self.request.user.username)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        connected_context(self.request, context)
+
+        for url in context["urls"]:
+            url.shortened_url = make_shortened_url(self.request, url._id)
+            url.expiration_date = date_to_str(url.expiration)
+        return context
+
+class NotFoundView(generic.base.TemplateView):
+    template_name = template("not_found.html")
+    http_method_names = ["get"]
+
+    def http_method_not_allowed(request, *args, **kwargs):
+        return render_404(request)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        connected_context(self.request, context)
+        return context
 
 # Routes
 def shorten(request):
