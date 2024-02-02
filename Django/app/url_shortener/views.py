@@ -38,7 +38,11 @@ def get_error_message(form, key: str):
     return err.message if err else ""
 
 def get_form_data(form, key: str, placeholder: object = None):
-    return form.cleaned_data[key] if key in form.cleaned_data else placeholder
+    cleaned_data = form.cleaned_data[key] if key in form.cleaned_data else None
+    if cleaned_data:
+        return cleaned_data
+    
+    return form.data[key] if key in form.data else placeholder
 
 def get_url_id():
     def generate_url_id():
@@ -70,11 +74,34 @@ def render_template(request, file: str, context: dict = {}):
     context["connected"] = request.user.is_authenticated
     return render(request, template(file), context)
 
+def render_404(request):
+    return render_template(request, "not_found.html")
+
 # Generic views
 class IndexView(generic.base.RedirectView):
     permanent = True
     query_string = True
     pattern_name = "shorten"
+    http_method_names = ["get"]
+
+    def http_method_not_allowed(self, request, *args, **kwargs):
+        return render_404(self.request)
+
+class RedirectToTargetView(generic.TemplateView):
+    permanent = True
+    query_string = True
+    http_method_names = ["get"]
+
+    def http_method_not_allowed(self, request, *args, **kwargs):
+        return render_404(self.request)
+    
+    def get(self, request, url_id):
+        query = URL.objects.filter(_id=url_id)
+
+        if(len(query) == 0):
+            return render_404(self.request)
+
+        return redirect(query[0].target, permanent=True)
 
 class UserURLView(LoginRequiredMixin, generic.ListView):
     login_url = "/login/"
@@ -85,7 +112,7 @@ class UserURLView(LoginRequiredMixin, generic.ListView):
     http_method_names = ["get"]
 
     def http_method_not_allowed(request, *args, **kwargs):
-        return redirect(reverse("unknown"), permanent=True)
+        return render_404(self.request)
     
     def get_queryset(self):
         return URL.objects.filter(username=self.request.user.username)
@@ -101,6 +128,10 @@ class UserURLView(LoginRequiredMixin, generic.ListView):
 
 class NotFoundView(generic.base.TemplateView):
     template_name = template("not_found.html")
+    http_method_names = ["get"]
+
+    def http_method_not_allowed(request, *args, **kwargs):
+        return render_404(self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -112,7 +143,7 @@ def redirect_to_target_url(request, url_id):
     query = URL.objects.filter(_id=url_id)
 
     if(len(query) == 0):
-        return render_template(request, "not_found.html")
+        return render_404(self.request)
 
     return redirect(query[0].target, permanent=True)
 
@@ -139,6 +170,7 @@ def shorten(request):
                 target_url = form.cleaned_data["url"]
             else:
                 return render_template(request, "index.html", {
+                    "url": get_form_data(form, "url", ""),
                     "input_error": get_error_message(form, "url")
                 })
 
@@ -187,6 +219,7 @@ def log_in(request):
                 return render_template(request, "login.html", {
                     "tab": "login",
                     "shortening": shortening,
+                    "login_username": get_form_data(form, "username", ""),
                     "login_username_error": username_err.message
                 })
 
@@ -194,12 +227,14 @@ def log_in(request):
                 return render_template(request, "login.html", {
                     "tab": "login",
                     "shortening": shortening,
+                    "login_username": get_form_data(form, "username", ""),
                     "login_password_error": password_err.message
                 })
             
             return render_template(request, "login.html", {
                 "tab": "login",
                 "shortening": shortening,
+                "login_username": get_form_data(form, "username", ""),
                 "global_error": "Invalid credentials"
             })
 
@@ -223,6 +258,7 @@ def register(request):
                 return render_template(request, "login.html", {
                     "tab": "register",
                     "shortening": shortening,
+                    "register_username": get_form_data(form, "username", ""),
                     "global_error": "Username already exists"
                 })
             

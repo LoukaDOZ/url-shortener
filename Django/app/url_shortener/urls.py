@@ -4,7 +4,7 @@ from . import views
 
 urlpatterns = [
     path("", views.IndexView.as_view(), name="index"),
-    path("r/<str:url_id>/", views.redirect_to_target_url, name="redirect"),
+    path("r/<str:url_id>/", views.RedirectToTargetView.as_view(), name="redirect"),
     path("shorten/", views.shorten, name="shorten"),
     path("login/", views.log_in, name="login"),
     path("register/", views.register, name="register"),
