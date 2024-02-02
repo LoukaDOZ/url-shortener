@@ -71,11 +71,14 @@ def template(file: str):
     return os.path.join("url_shortener", file)
 
 def render_template(request, file: str, context: dict = {}):
-    context["connected"] = request.user.is_authenticated
+    connected_context(request, context)
     return render(request, template(file), context)
 
 def render_404(request):
     return render_template(request, "not_found.html")
+
+def connected_context(request, context):
+    context["connected"] = hasattr(request, "user") and request.user.is_authenticated
 
 # Generic views
 class IndexView(generic.base.RedirectView):
@@ -85,7 +88,12 @@ class IndexView(generic.base.RedirectView):
     http_method_names = ["get"]
 
     def http_method_not_allowed(self, request, *args, **kwargs):
-        return render_404(self.request)
+        return render_404(request)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        connected_context(self.request, context)
+        return context
 
 class RedirectToTargetView(generic.TemplateView):
     permanent = True
@@ -93,11 +101,11 @@ class RedirectToTargetView(generic.TemplateView):
     http_method_names = ["get"]
 
     def http_method_not_allowed(self, request, *args, **kwargs):
-        return render_404(self.request)
+        return render_404(request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["connected"] = self.request.user.is_authenticated
+        connected_context(self.request, context)
         return context
     
     def get(self, request, url_id):
@@ -117,14 +125,14 @@ class UserURLView(LoginRequiredMixin, generic.ListView):
     http_method_names = ["get"]
 
     def http_method_not_allowed(request, *args, **kwargs):
-        return render_404(self.request)
+        return render_404(request)
     
     def get_queryset(self):
         return URL.objects.filter(username=self.request.user.username)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["connected"] = self.request.user.is_authenticated
+        connected_context(self.request, context)
 
         for url in context["urls"]:
             url.shortened_url = make_shortened_url(self.request, url._id)
@@ -136,11 +144,11 @@ class NotFoundView(generic.base.TemplateView):
     http_method_names = ["get"]
 
     def http_method_not_allowed(request, *args, **kwargs):
-        return render_404(self.request)
+        return render_404(request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["connected"] = self.request.user.is_authenticated
+        connected_context(self.request, context)
         return context
 
 class ShortenView(generic.edit.FormView):
@@ -150,11 +158,11 @@ class ShortenView(generic.edit.FormView):
     http_method_names = ["get", "post"]
 
     def http_method_not_allowed(request, *args, **kwargs):
-        return render_404(self.request)
+        return render_404(request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["connected"] = self.request.user.is_authenticated
+        connected_context(self.request, context)
         return context
     
     def form_valid(self, form):
@@ -181,6 +189,108 @@ class ShortenView(generic.edit.FormView):
             "url": get_form_data(form, "url", ""),
             "input_error": get_error_message(form, "url")
         })
+
+class LoginView(generic.edit.FormView):
+    template_name = template("login.html")
+    form_class = LoginForm
+    success_url = "/"
+    http_method_names = ["get", "post"]
+
+    def http_method_not_allowed(request, *args, **kwargs):
+        return render_404(request)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        connected_context(self.request, context)
+        return context
+    
+    def form_valid(self, form):
+        username = get_form_data(form, "username", "")
+        raw_password = get_form_data(form, "password", "")
+        shortening = False
+
+        user = authenticate(self.request, username=username, password=raw_password)
+        if user is not None:
+            login(self.request, user)
+            return redirect("/shorten/", permanent=(not shortening))
+        else:
+            return self.form_invalid(form)
+    
+    def form_invalid(self, form):
+        username_err = get_error(form, "username")
+        password_err = get_error(form, "password")
+        context = {
+            "tab": "login",
+            "login_username": get_form_data(form, "username", "")
+        }
+
+        if username_err and username_err.code == "required":
+            context["login_username_error"] = username_err.message
+        elif password_err and password_err.code == "required":
+            context["login_password_error"] = password_err.message
+        else:
+            context["global_error"] = "Invalid credentials"
+
+        return render_template(self.request, "login.html", context)
+
+class RegisterView(generic.edit.FormView):
+    template_name = ""
+    form_class = RegisterForm
+    success_url = "/"
+    http_method_names = ["post"]
+
+    def http_method_not_allowed(request, *args, **kwargs):
+        return render_404(request)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        connected_context(self.request, context)
+        return context
+    
+    def form_valid(self, form):
+        username = get_form_data(form, "username", "")
+        raw_password = get_form_data(form, "password", "")
+        hashed_password = make_password(raw_password)
+        
+        if len(User.objects.filter(username = username)) != 0:
+            return self.form_invalid(form, True)
+        
+        user = User(
+            username = username,
+            password = hashed_password
+        )
+
+        user.save()
+        login(self.request, user)
+        return redirect("/shorten/", permanent=True)
+    
+    def form_invalid(self, form, user_exists_err: bool = False):
+        context = {
+            "tab": "register",
+            "register_username": get_form_data(form, "username", "")
+        }
+
+        if user_exists_err:
+            context["global_error"] = "Username already exists"
+        else:
+            context["register_username_error"] = get_error_message(form, "username")
+            context["register_password_error"] = get_error_message(form, "password")
+            context["register_confirm_password_error"] = get_error_message(form, "confirm_password")
+
+        return render_template(self.request, "login.html", context)
+
+class LogoutView(generic.base.RedirectView):
+    permanent = True
+    query_string = True
+    pattern_name = "index"
+    http_method_names = ["get"]
+
+    def http_method_not_allowed(self, request, *args, **kwargs):
+        return render_404(self.request)
+
+    def get_redirect_url(self, *args, **kwargs):
+        logout(self.request)
+        return super().get_redirect_url(*args, **kwargs)
 
 # Routes
 def shorten(request):
@@ -323,7 +433,3 @@ def register(request):
             })
     
     return redirect("/login/?tab=register", permanent=True)
-
-def log_out(request):
-    logout(request)
-    return redirect("/", permanent=True)
