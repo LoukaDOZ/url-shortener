@@ -71,11 +71,16 @@ def render_template(request, file: str, context: dict = {}):
     return render(request, template(file), context)
 
 # Generic views
+class IndexView(generic.base.RedirectView):
+    permanent = True
+    query_string = True
+    pattern_name = "shorten"
+
 class UserURLView(LoginRequiredMixin, generic.ListView):
     login_url = "/login/"
     redirect_field_name = "next"
 
-    template_name = "url_shortener/my_urls.html"
+    template_name = template("my_urls.html")
     context_object_name = "urls"
     http_method_names = ["get"]
 
@@ -94,10 +99,15 @@ class UserURLView(LoginRequiredMixin, generic.ListView):
             url.expiration_date = date_to_str(url.expiration)
         return context
 
-# Routes
-def index(request):
-    return redirect("/shorten/", permanent=True)
+class NotFoundView(generic.base.TemplateView):
+    template_name = template("not_found.html")
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["connected"] = self.request.user.is_authenticated
+        return context
+
+# Routes
 def redirect_to_target_url(request, url_id):
     query = URL.objects.filter(_id=url_id)
 
@@ -238,6 +248,3 @@ def register(request):
 def log_out(request):
     logout(request)
     return redirect("/", permanent=True)
-
-def not_found(request, unknown_path = ""):
-    return render_template(request, "not_found.html")
