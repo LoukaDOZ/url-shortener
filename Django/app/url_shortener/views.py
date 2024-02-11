@@ -136,8 +136,6 @@ class ShortenView(generic.edit.FormView):
         session_url_id = request.session.get("url_id", None)
         session_target_url = request.session.get("target_url", None)
 
-        print("GET", shortening, session_url_id, session_target_url)
-
         if not shortening or not session_url_id or not session_target_url:
             return super().get(self, request, *args, **kwargs)
 
@@ -148,8 +146,6 @@ class ShortenView(generic.edit.FormView):
         guest = bool(self.__get_query_param__("guest", False))
         session_url_id = request.session.get("url_id", None)
         session_target_url = request.session.get("target_url", None)
-
-        print("POST", shortening, guest, session_url_id, session_target_url)
 
         if not shortening or not session_url_id or not session_target_url:
             return super().post(self, request, *args, **kwargs)
@@ -380,145 +376,3 @@ class NotFoundView(generic.base.TemplateView):
         context = super().get_context_data(**kwargs)
         connected_context(self.request, context)
         return context
-
-# Routes
-def shorten(request):
-    guest = bool(get_query_param(request, "guest", False))
-
-    if request.method == "POST":
-        url_id = None
-        target_url = None
-        username = None
-
-        pending_url_id = request.session.get("pending_url_id", None)
-        pending_target_url = request.session.get("pending_target_url", None)
-        
-        if pending_url_id:
-            url_id = pending_url_id
-            target_url = pending_target_url
-            del request.session["pending_url_id"]
-            del request.session["pending_target_url"]
-        else:        
-            form = ShortenForm(request.POST)
-            if form.is_valid():
-                url_id = get_url_id()
-                target_url = form.cleaned_data["url"]
-            else:
-                return render_template(request, "index.html", {
-                    "url": get_form_data(form, "url", ""),
-                    "input_error": get_error_message(form, "url")
-                })
-
-        if request.user.is_authenticated:
-            username = User.objects.filter(username=request.user.username)[0]
-        elif not pending_url_id:
-            request.session["pending_url_id"] = url_id
-            request.session["pending_target_url"] = target_url
-            return redirect(f"/login/?shortening=true", permanent=True)
-
-        url = URL(
-            _id = url_id,
-            target = target_url,
-            expiration = get_url_expiration(),
-            username = username
-        )
-        url.save()
-
-        return render_template(request, "shortened.html", {
-            "shortened_url": make_shortened_url(request, url._id),
-            "expiration_date": date_to_str(url.expiration)
-        })
-
-    return render_template(request, "index.html")
-
-def log_in(request):
-    tab = get_query_param(request, "tab", "login")
-    shortening = bool(get_query_param(request, "shortening", False))
-
-    if request.method == "POST":
-        form = LoginForm(request.POST)
-
-        if form.is_valid():
-            username = get_form_data(form, "username", "")
-            raw_password = get_form_data(form, "password", "")
-
-            user = authenticate(request, username=username, password=raw_password)
-            if user is not None:
-                login(request, user)
-                return redirect("/shorten/", permanent=(not shortening))
-            else:
-                return render_template(request, "login.html", {
-                    "tab": "login",
-                    "shortening": shortening,
-                    "login_username": get_form_data(form, "username", ""),
-                    "global_error": "Invalid credentials"
-                })
-        else:
-            username_err = get_error(form, "username")
-            password_err = get_error(form, "password")
-
-            if username_err and username_err.code == "required":
-                return render_template(request, "login.html", {
-                    "tab": "login",
-                    "shortening": shortening,
-                    "login_username": get_form_data(form, "username", ""),
-                    "login_username_error": username_err.message
-                })
-
-            if password_err and password_err.code == "required":
-                return render_template(request, "login.html", {
-                    "tab": "login",
-                    "shortening": shortening,
-                    "login_username": get_form_data(form, "username", ""),
-                    "login_password_error": password_err.message
-                })
-            
-            return render_template(request, "login.html", {
-                "tab": "login",
-                "shortening": shortening,
-                "login_username": get_form_data(form, "username", ""),
-                "global_error": "Invalid credentials"
-            })
-
-    return render_template(request, "login.html", {
-        "tab": tab,
-        "shortening": shortening
-    })
-
-def register(request):
-    shortening = bool(get_query_param(request, "shortening", "False"))
-
-    if request.method == "POST":
-        form = RegisterForm(request.POST)
-
-        if form.is_valid():
-            username = get_form_data(form, "username", "")
-            raw_password = get_form_data(form, "password", "")
-            hashed_password = make_password(raw_password)
-            
-            if len(User.objects.filter(username = username)) != 0:
-                return render_template(request, "login.html", {
-                    "tab": "register",
-                    "shortening": shortening,
-                    "register_username": get_form_data(form, "username", ""),
-                    "global_error": "Username already exists"
-                })
-            
-            user = User(
-                username = username,
-                password = hashed_password
-            )
-            user.save()
-            login(request, user)
-            return redirect("/shorten/", permanent=(not shortening))
-        else:
-            return render_template(request, "login.html", {
-                "tab": "register",
-                "shortening": shortening,
-                "register_username": get_form_data(form, "username", ""),
-                "register_username_error": get_error_message(form, "username"),
-                "register_password_error": get_error_message(form, "password"),
-                "register_confirm_password_error": get_error_message(form, "confirm_password")
-            })
-    
-    return redirect("/login/?tab=register", permanent=True)
