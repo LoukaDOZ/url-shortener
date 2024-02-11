@@ -1,6 +1,6 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.views import generic
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.hashers import check_password, make_password
@@ -19,9 +19,6 @@ from datetime import datetime
 URL_LIFETIME = 604800 # 7 days in seconds
 URL_ID_LEN = 8
 URL_ID_CHARS = "ABCDEFGHIJKLMOPQRSTUVWXYZabcdefghijklmopqrstuvwxyz0123456789"
-
-def get_query_param(request, key: str, placeholder: object = None):
-    return request.GET[key] if key in request.GET else placeholder
 
 def get_error(form, key: str):
     errors = form.errors.as_data()
@@ -54,7 +51,7 @@ def get_url_id():
         return url_id
     
     url_id = generate_url_id()
-    while len(URL.objects.filter(_id=url_id)) > 0:
+    while db_get_or_none(URL, _id=url_id) is not None:
         url_id = get_url_id()
     
     return url_id
@@ -80,6 +77,12 @@ def render_404(request):
 
 def connected_context(request, context):
     context["connected"] = hasattr(request, "user") and request.user.is_authenticated
+
+def db_get_or_none(model, **kwargs):
+    try:
+        return get_object_or_404(model, **kwargs)
+    except Http404:
+        return None
 
 # Generic views
 class IndexView(generic.base.RedirectView):
@@ -110,12 +113,12 @@ class RedirectToTargetView(generic.TemplateView):
         return context
     
     def get(self, request, url_id):
-        query = URL.objects.filter(_id=url_id)
+        url = db_get_or_none(URL, _id=url_id)
 
-        if(len(query) == 0):
+        if url is None:
             return render_404(self.request)
 
-        return redirect(query[0].target, permanent=True)
+        return redirect(url.target, permanent=True)
 
 class ShortenView(generic.edit.FormView):
     template_name = template("index.html")
@@ -167,7 +170,7 @@ class ShortenView(generic.edit.FormView):
             _id=url_id,
             target=target_url,
             expiration=get_url_expiration(),
-            username=User.objects.get(username=self.request.user.username)
+            username=db_get_or_none(User, username=self.request.user.username)
         )
         url.save()
 
@@ -287,7 +290,7 @@ class RegisterView(generic.edit.FormView):
         hashed_password = make_password(raw_password)
         next_url = self.__get_query_param__("next", None)
         
-        if len(User.objects.filter(username = username)) != 0:
+        if db_get_or_none(User, username = username) is not None:
             return self.form_invalid(form, True)
         
         user = User(
@@ -310,7 +313,7 @@ class RegisterView(generic.edit.FormView):
         }
 
         if user_exists_err:
-            context["global_error"] = "Username already exists"
+            context["register_username_error"] = "Username already exists"
         else:
             context["register_username_error"] = get_error_message(form, "username")
             context["register_password_error"] = get_error_message(form, "password")
