@@ -48,23 +48,23 @@ def remove_expired_urls():
     db.delete_expired_urls(int(time.time()))
 
 # Routes
-async def redirect_to_target_url(request: Request, url_id: str) -> HTMLResponse:
+def redirect_to_target_url(request: Request, url_id: str) -> HTMLResponse:
     url_id = url_id.strip()
 
     remove_expired_urls()
     url = db.get_target_url(url_id)
 
     if not url:
-        return await default_routes.not_found(request)
+        return default_routes.not_found(request)
     return redirect(url)
 
-async def shorten_page(request: Request) -> HTMLResponse:
+def shorten_page(request: Request) -> HTMLResponse:
     return render(
         request = request,
         page = "index.html"
     )
 
-async def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:  
+def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:  
     missing_url = False
     failed_url_size = False
     failed_url_regex = False
@@ -125,7 +125,7 @@ async def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:
         }
     )
 
-async def my_urls_page(request: Request) -> HTMLResponse:
+def my_urls_page(request: Request) -> HTMLResponse:
     user_session = session.get_session(request)
 
     if not user_session.has("is_connected"):

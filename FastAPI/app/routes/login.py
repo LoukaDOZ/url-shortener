@@ -39,7 +39,7 @@ def compare_password(plain_password: str, hashed_password: str) -> str:
     return pwd_context.verify(plain_password, hashed_password)
 
 # Routes
-async def login_page(request: Request, tab: str, shortening: bool) -> HTMLResponse:
+def login_page(request: Request, tab: str, shortening: bool) -> HTMLResponse:
     session.get_session(request).delete("is_connected")
 
     return render(
@@ -51,7 +51,7 @@ async def login_page(request: Request, tab: str, shortening: bool) -> HTMLRespon
         }
     )
 
-async def login(request: Request, username: str, password: str, shortening: bool) -> HTMLResponse:
+def login(request: Request, username: str, password: str, shortening: bool) -> HTMLResponse:
     username = username.strip()
     password = password.strip()
     hashed_password = db.get_user_password(username)
@@ -81,7 +81,7 @@ async def login(request: Request, username: str, password: str, shortening: bool
         return redirect("/shorten")
     return redirect("/", True)
 
-async def register(
+def register(
         request: Request,
         username: str,
         password: str,
@@ -133,6 +133,6 @@ async def register(
         return redirect("/shorten")
     return redirect("/", True)
 
-async def logout(request: Request) -> HTMLResponse:
+def logout(request: Request) -> HTMLResponse:
     session.get_session(request).delete("is_connected")
     return redirect("/", True)
