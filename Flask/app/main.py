@@ -49,57 +49,57 @@ def get_args(key: str, placeholder: object) -> object:
 
 # Routes
 @app.route("/", methods=["GET"])
-async def root() -> Response:
-    return await default_routes.root()
+def root() -> Response:
+    return default_routes.root()
 
 @app.route("/r/<string:url_id>", methods=["GET"])
-async def redirect(url_id: str) -> Response:
-    return await url_routes.redirect_to_target_url(url_id)
+def redirect(url_id: str) -> Response:
+    return url_routes.redirect_to_target_url(url_id)
 
 @app.route("/shorten", methods=["GET", "POST"])
-async def shorten() -> Response:
+def shorten() -> Response:
     if request.method == "POST":
         url = get_form("url", "")
         guest = bool(get_args("guest", False))
-        return await url_routes.shorten(request.url_root, url, guest)
+        return url_routes.shorten(request.url_root, url, guest)
     
-    return await url_routes.shorten_page()
+    return url_routes.shorten_page()
 
 @app.route("/login", methods=["GET", "POST"])
-async def login() -> Response:
+def login() -> Response:
     shortening = bool(get_args("shortening", False))
 
     if request.method == "POST":
         username = get_form("username", "")
         password = get_form("password", "")
-        return await login_routes.login(username, password, shortening)
+        return login_routes.login(username, password, shortening)
     
     tab = get_args("tab", "login")
-    return await login_routes.login_page(tab, shortening)
+    return login_routes.login_page(tab, shortening)
 
 @app.post("/register")
-async def register() -> Response:
+def register() -> Response:
     username = get_form("username", "")
     password = get_form("password", "")
     confirm_password = get_form("confirm_password", "")
     shortening = bool(get_args("shortening", False))
 
-    return await login_routes.register(
+    return login_routes.register(
         username, password, confirm_password, shortening
     )
 
 @app.get("/logout")
-async def logout() -> Response:
-    return await login_routes.logout()
+def logout() -> Response:
+    return login_routes.logout()
 
 @app.get("/my-urls")
-async def my_urls() -> Response:
-    return await url_routes.my_urls_page(request.url_root)
+def my_urls() -> Response:
+    return url_routes.my_urls_page(request.url_root)
 
 @app.route("/<path:unknown_path>")
-async def not_found(unknown_path: str) -> Response:
+def not_found(unknown_path: str) -> Response:
     abort(404)
 
 @app.errorhandler(404)
-async def page_not_found(error) -> Response:
-    return await default_routes.not_found(), 404
+def page_not_found(error) -> Response:
+    return default_routes.not_found(), 404

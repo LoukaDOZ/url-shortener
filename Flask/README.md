@@ -10,5 +10,5 @@ URL Shortener web app with Flask framework
 | Database             | PostgreSQL                    |
 | Database library     | Flask-SQLAlchemy + Psycopg    |
 | Server-side sessions | Flask-Session2 + SQLAlchemy   |
-| HTML template engine | Jinja (included in Flask)     |
+| HTML template engine | Jinja2 (included in Flask)     |
 | Password hashing     | Passlib                       |
