@@ -5,6 +5,7 @@ from django.views import generic
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.utils.http import urlencode
 
 from .models import URL, User
 from .forms import ShortenForm, LoginForm, RegisterForm
@@ -129,18 +130,48 @@ class ShortenView(generic.edit.FormView):
         context = super().get_context_data(**kwargs)
         connected_context(self.request, context)
         return context
+
+    def get(self, request, *args, **kwargs):
+        shortening = bool(self.__get_query_param__("shortening", False))
+        session_url_id = request.session.get("url_id", None)
+        session_target_url = request.session.get("target_url", None)
+
+        print("GET", shortening, session_url_id, session_target_url)
+
+        if not shortening or not session_url_id or not session_target_url:
+            return super().get(self, request, *args, **kwargs)
+
+        return self.__pending_shortening__(request, session_url_id, session_target_url)
+
+    def post(self, request, *args, **kwargs):
+        shortening = bool(self.__get_query_param__("shortening", False))
+        guest = bool(self.__get_query_param__("guest", False))
+        session_url_id = request.session.get("url_id", None)
+        session_target_url = request.session.get("target_url", None)
+
+        print("POST", shortening, guest, session_url_id, session_target_url)
+
+        if not shortening or not session_url_id or not session_target_url:
+            return super().post(self, request, *args, **kwargs)
+    
+        return self.__pending_shortening__(request, session_url_id, session_target_url, guest)
     
     def form_valid(self, form):
         url_id = get_url_id()
         target_url = form.cleaned_data["url"]
-        expiration = get_url_expiration()
-        username = None
+
+        if not self.request.user.is_authenticated:
+            self.request.session["url_id"] = url_id
+            self.request.session["target_url"] = target_url
+        
+            next_url = urlencode({"next": "/shorten/?shortening=true"})
+            return redirect(f"/login/?shortening=true&{next_url}", permanent=True)
 
         url = URL(
-            _id = url_id,
-            target = target_url,
-            expiration = expiration,
-            username = username
+            _id=url_id,
+            target=target_url,
+            expiration=get_url_expiration(),
+            username=User.objects.get(username=self.request.user.username)
         )
         url.save()
 
@@ -154,6 +185,26 @@ class ShortenView(generic.edit.FormView):
             "url": get_form_data(form, "url", ""),
             "input_error": get_error_message(form, "url")
         })
+    
+    def __pending_shortening__(self, request, session_url_id: str, session_target_url: str, guest: bool = False):
+        del request.session["url_id"]
+        del request.session["target_url"]
+        username = User.objects.get(username=request.user.username) if not guest else None
+        url = URL(
+            _id=session_url_id,
+            target=session_target_url,
+            expiration=get_url_expiration(),
+            username=username
+        )
+        url.save()
+
+        return render_template(self.request, "shortened.html", {
+            "shortened_url": make_shortened_url(request, url._id),
+            "expiration_date": date_to_str(url.expiration)
+        })
+    
+    def __get_query_param__(self, key: str, placeholder: object):
+        return self.request.GET.get(key, placeholder)
 
 class LoginView(generic.edit.FormView):
     template_name = template("login.html")
@@ -170,22 +221,22 @@ class LoginView(generic.edit.FormView):
         context["tab"] = self.__get_query_param__("tab", "login")
         context["login_url"] = self.__build_form_url__("/login/")
         context["register_url"] = self.__build_form_url__("/register/")
+        context["shortening"] = bool(self.__get_query_param__("shortening", False))
         return context
     
     def form_valid(self, form, *args, **kwargs):
         username = get_form_data(form, "username", "")
         raw_password = get_form_data(form, "password", "")
         next_url = self.__get_query_param__("next", None)
-        shortening = False
 
         user = authenticate(self.request, username=username, password=raw_password)
         if user is not None:
             login(self.request, user)
 
             if next_url:
-                return redirect(next_url, permanent=True)
+                return redirect(next_url, permanent=False)
 
-            return redirect("/shorten/", permanent=(not shortening))
+            return redirect("/shorten/", permanent=True)
         else:
             return self.form_invalid(form)
     
@@ -210,9 +261,12 @@ class LoginView(generic.edit.FormView):
         return self.request.GET.get(key, placeholder)
     
     def __build_form_url__(self, path: str):
+        shortening = bool(self.__get_query_param__('shortening', False))
         next_url = self.__get_query_param__('next', None)
-        next_param = f"next={next_url}" if next_url else ""
-        return f"{path}?{next_param}"
+
+        shortening_param = "shortening=true" if shortening else ""
+        next_param = urlencode({"next":next_url}) if next_url else ""
+        return f"{path}?{shortening_param}&{next_param}"
 
 class RegisterView(generic.edit.FormView):
     template_name = ""
@@ -228,6 +282,7 @@ class RegisterView(generic.edit.FormView):
         connected_context(self.request, context)
         context["login_url"] = self.__build_form_url__("/login/")
         context["register_url"] = self.__build_form_url__("/register/")
+        context["shortening"] = bool(self.__get_query_param__("shortening", False))
         return context
     
     def form_valid(self, form):
@@ -271,9 +326,12 @@ class RegisterView(generic.edit.FormView):
         return self.request.GET.get(key, placeholder)
     
     def __build_form_url__(self, path: str):
+        shortening = bool(self.__get_query_param__('shortening', False))
         next_url = self.__get_query_param__('next', None)
-        next_param = f"next={next_url}" if next_url else ""
-        return f"{path}?{next_param}"
+
+        shortening_param = "shortening=true" if shortening else ""
+        next_param = urlencode({"next":next_url}) if next_url else ""
+        return f"{path}?{shortening_param}&{next_param}"
 
 class LogoutView(generic.base.RedirectView):
     permanent = True

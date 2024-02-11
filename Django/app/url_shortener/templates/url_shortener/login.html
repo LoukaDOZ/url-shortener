@@ -4,7 +4,7 @@
 
     <div class="container mt-1">
         {% if shortening is eq True %}
-            <form id="form-guest" class="mb-2" action="/shorten/?guest=true" method="post">
+            <form id="form-guest" class="mb-2" action="/shorten/?shortening=true&guest=true" method="post">
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                 
                 <a href="/" class="fs-6 me-3 link-underline link-underline-opacity-0 link-underline-opacity-100-hover">
