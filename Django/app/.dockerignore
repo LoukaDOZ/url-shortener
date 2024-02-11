@@ -1,0 +1,4 @@
+./app/__pycache__/
+./url_shortener/__pycache__/
+./url_shortener/migrations/__pycache__/
+./Dockerfile/

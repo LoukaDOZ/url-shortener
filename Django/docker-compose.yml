@@ -11,6 +11,7 @@ services:
       DB_USER: "admin"
       DB_PASSWORD: "passwd"
       DB_DEFAULT_DB_NAME: "url_shortener"
+      SECRET_KEY: "should-not-be-visible-4b_$$ti-gecxp#4eqfn@5p1pjge^#!a69*x85o9j8-+h4=3yo!8"
     depends_on:
       - db
     restart: always
@@ -21,7 +22,7 @@ services:
     environment:
       POSTGRES_USER: "admin"
       POSTGRES_PASSWORD: "passwd"
+      POSTGRES_DB: "url_shortener"
     volumes:
       - ./db/data:/var/lib/postgresql/data
-      - ./db/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
     restart: always
