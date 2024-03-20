@@ -20,7 +20,8 @@ Each project can be easy launch through a `Makefile` and a `docker-compose.yml`.
 | `make restart`     | Restart Docker containers                                       |
 | `make rebuild`     | Rebuild Dockerfiles and restart Docker containers               |
 | `make stop`        | Stop Docker containers                                          |
-| `make db-clean`    | Delete database volume and remove all data (require to be root) |
+| `make clean`       | Delete database volume and docker images (require root)         |
+| `make db-clean`    | Delete database volume (require root)                     |
 
 Project is then locally accessible via : http://localhost:8080.
 
