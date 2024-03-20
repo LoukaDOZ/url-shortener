@@ -112,7 +112,7 @@ def shorten(request: Request, url: str, guest: bool) -> HTMLResponse:
     elif not guest:
         user_session.set("pending_url_id", url_id)
         user_session.set("pending_target_url", url)
-        return redirect(f"/login?shortening=true", True)
+        return redirect(f"/login/?shortening=true", True)
 
     expiration_date = get_url_expiration_date()
     db.insert_url(url, url_id, expiration_date, username)
@@ -129,7 +129,7 @@ def my_urls_page(request: Request) -> HTMLResponse:
     user_session = session.get_session(request)
 
     if not user_session.has("is_connected"):
-        return redirect("/login")
+        return redirect("/login/")
 
     query_urls = db.get_user_urls(user_session.get("username"))
     urls = []

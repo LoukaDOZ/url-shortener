@@ -78,7 +78,7 @@ def login(request: Request, username: str, password: str, shortening: bool) -> H
     user_session.set("username", username)
 
     if shortening:
-        return redirect("/shorten")
+        return redirect("/shorten/")
     return redirect("/", True)
 
 def register(
@@ -130,7 +130,7 @@ def register(
     user_session.set("username", username)
 
     if shortening:
-        return redirect("/shorten")
+        return redirect("/shorten/")
     return redirect("/", True)
 
 def logout(request: Request) -> HTMLResponse:

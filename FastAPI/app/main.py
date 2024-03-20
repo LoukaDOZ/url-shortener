@@ -28,30 +28,30 @@ def root(request: Request) -> HTMLResponse:
 def redirect(request: Request, url_id: str) -> HTMLResponse:
     return url_routes.redirect_to_target_url(request, url_id)
 
-@app.get("/shorten", response_class=HTMLResponse)
+@app.get("/shorten/", response_class=HTMLResponse)
 def shorten_page(request: Request) -> HTMLResponse:
     return url_routes.shorten_page(request)
 
-@app.post("/shorten", response_class=HTMLResponse)
+@app.post("/shorten/", response_class=HTMLResponse)
 def shorten(request: Request,
         url: Annotated[str, Form()] = "",
         guest: bool = False) -> HTMLResponse:  
     return url_routes.shorten(request, url, guest)
 
-@app.get("/login", response_class=HTMLResponse)
+@app.get("/login/", response_class=HTMLResponse)
 def login_page(request: Request, 
         tab: str = "login",
         shortening: bool = False) -> HTMLResponse:
     return login_routes.login_page(request, tab, shortening)
 
-@app.post("/login", response_class=HTMLResponse)
+@app.post("/login/", response_class=HTMLResponse)
 def login(request: Request,
         username: Annotated[str, Form()],
         password: Annotated[str, Form()],
         shortening: bool = False) -> HTMLResponse:
     return login_routes.login(request, username, password, shortening)
 
-@app.post("/register", response_class=HTMLResponse)
+@app.post("/register/", response_class=HTMLResponse)
 def register(request: Request,
         username: Annotated[str, Form()],
         password: Annotated[str, Form()],
@@ -59,11 +59,11 @@ def register(request: Request,
         shortening: bool = False) -> HTMLResponse:
     return login_routes.register(request, username, password, confirm_password, shortening)
 
-@app.get("/logout", response_class=HTMLResponse)
+@app.get("/logout/", response_class=HTMLResponse)
 def logout(request: Request) -> HTMLResponse:
     return login_routes.logout(request)
 
-@app.get("/my-urls", response_class=HTMLResponse)
+@app.get("/my-urls/", response_class=HTMLResponse)
 def my_urls_page(request: Request) -> HTMLResponse:
     return url_routes.my_urls_page(request)
 
