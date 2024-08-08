@@ -1,6 +1,6 @@
 # URL Shortener
 
-URL Shortener is a little web app that, from a given URL, associates an smaller and more convenient one.
+URL Shortener is a web app that, from a given URL, associates an smaller and more convenient one.
 The goal of this project is to make a first step in web app developement using Python.
 
 3 versions of this project exist, one for each of the following web framework:
